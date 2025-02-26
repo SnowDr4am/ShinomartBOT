@@ -8,9 +8,11 @@ import re
 
 from app.handlers.main import user_router
 import app.keyboards.user.user as kb
+import app.database.requests as rq
 
 
 class GetUserInfo(StatesGroup):
+    name = State()
     mobile_phone = State()
     birthday = State()
 
@@ -27,7 +29,8 @@ async def cmd_start(message: Message):
 async def registration(callback: CallbackQuery, state: FSMContext):
     await callback.answer("")
     await callback.message.answer(
-        "Для начала мне необходимо собрать о Вас следующую информацию:\n"
+        "Для регистрации мне необходимо собрать о Вас следующую информацию:\n"
+        "— <b>Ваше имя</b>\n"
         "— <b>Ваш номер телефона</b>\n"
         "— <b>Дату рождения</b>\n\n"
         "<i>Очень важно:</i> Если вы уже зарегистрировались в программе лояльности, "
@@ -36,7 +39,23 @@ async def registration(callback: CallbackQuery, state: FSMContext):
         parse_mode="HTML",
         reply_markup=kb.get_phone_number
     )
+    await callback.message.answer(
+        "Напишите, пожалуйста, Ваше имя"
+    )
+    await state.set_state(GetUserInfo.name)
+
+@user_router.message(GetUserInfo.name)
+async def get_name(message: Message, state: FSMContext):
+    user_input = message.text
+
+    await state.update_data(name=user_input)
+
+    await message.answer(
+        "Напишите, пожалуйста, ваш номер телефона"
+    )
+
     await state.set_state(GetUserInfo.mobile_phone)
+
 
 @user_router.message(GetUserInfo.mobile_phone)
 async def get_mobile_phone(message: Message, state: FSMContext):
@@ -62,7 +81,8 @@ async def get_mobile_phone(message: Message, state: FSMContext):
 
         await state.set_state(GetUserInfo.birthday)
 
-        await message.answer("Скажите вашу дату рождения", reply_markup=kb.get_birthday)
+        await message.answer("Напишите вашу дату рождения\n"
+                             "Пример: <code>26.02.2025</code>")
     except Exception as e:
         print(f"Ошибка: {e}")
 
@@ -97,6 +117,27 @@ async def get_birthday_date(message: Message, state: FSMContext):
         await state.update_data(birthday=formatted_date)
 
         await message.answer(f"Дата рождения успешно сохранена: {formatted_date}")
+
+        data = await state.get_data()
+        name = data.get("name")
+        number = data.get("mobile_phone")
+        birthday = data.get('birthday')
+
+        if await rq.set_user(
+            message.from_user.id,
+            datetime.datetime.now(),
+            name,
+            number,
+            birthday
+        ):
+            await message.answer("Регистрация успешно завершена. Введенные Вами данные:\n"
+                                 f"Имя: {name}\n"
+                                 f"Номер телефона: {number}\n"
+                                 f"Дата рождения: {birthday}")
+        else:
+            await message.answer("Возникла внутренняя ошибка\n"
+                                 "Наш специалист уже получил уведомление и работает над проблемой\n"
+                                 "Попробуйте зарегистрироваться позднее")
 
     except Exception as e:
         await message.answer("Произошла ошибка при обработке даты. Пожалуйста, попробуйте ещё раз.")

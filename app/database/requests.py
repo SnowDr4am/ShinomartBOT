@@ -4,7 +4,7 @@ from app.database.models import async_session
 from app.database.models import User
 
 
-async def set_user(user_id, date_today, mobile_phone, birthday):
+async def set_user(user_id, date_today, name, mobile_phone, birthday):
     async with async_session() as session:
         user = await session.scalar(select(User).where(User.user_id == user_id))
 
@@ -12,6 +12,7 @@ async def set_user(user_id, date_today, mobile_phone, birthday):
             new_user = User(
                 user_id=user_id,
                 registration_date=date_today,
+                name=name,
                 mobile_phone=mobile_phone,
                 birthday_date=birthday,
                 role='Пользователь'

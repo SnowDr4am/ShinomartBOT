@@ -20,6 +20,7 @@ class User(Base):
 
     user_id: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     registration_date: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, nullable=False)
+    name: Mapped[str] = mapped_column(String)
     mobile_phone: Mapped[str] = mapped_column(String, unique=True, nullable=True)
     birthday_date: Mapped[datetime.datetime] = mapped_column(Date, nullable=True)
     role: Mapped[str] = mapped_column(String)
