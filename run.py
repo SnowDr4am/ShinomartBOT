@@ -5,6 +5,10 @@ from app.servers.config import BOT_TOKEN
 from app.database.models import async_main
 from app.handlers.main import setup_middleware, user_router, admin_router, employee_router
 
+from app.handlers.user import user
+from app.handlers.admin import admin
+from app.handlers.employee import employee
+
 async def main():
     await async_main()
     await setup_middleware()

@@ -20,7 +20,7 @@ class GetUserInfo(StatesGroup):
 async def cmd_start(message: Message):
     await message.answer(
         "<b>Привет!</b>\n\n"
-        "Я бот шиномарта, который любит мешать бухгалтеру и делать для Вас скидки\n\n",
+        "Я бот шиномарта, который любит злить бухгалтера и делать для Вас скидки\n\n",
         parse_mode="HTML",
         reply_markup=kb.registration
     )

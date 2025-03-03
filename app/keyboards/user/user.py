@@ -2,7 +2,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardBu
 
 
 registration = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Начать регистрацию', callback_data='registration')]
+    [InlineKeyboardButton(text='Начать регистрацию', callback_data='registration')],
+    [InlineKeyboardButton(text='Я уже зарегистрирован', callback_data='authorization')]
 ])
 
 get_phone_number = ReplyKeyboardMarkup(
