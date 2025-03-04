@@ -14,21 +14,26 @@ import app.database.requests as rq
 @user_router.message(CommandStart())
 async def cmd_start(message: Message):
     if not await rq.check_user_by_id(message.from_user.id):
-        await message.answer(
+        text = (
             "<b>Привет!</b>\n\n"
             "Я бот шиномарта, который любит злить бухгалтера и делать для Вас скидки\n\n"
-            "Для начала сотрудничества с нами, Вам необходимо зарегистрироваться",
-            parse_mode="HTML",
-            reply_markup=kb.registration
+            "Для начала сотрудничества с нами, Вам необходимо зарегистрироваться"
         )
+        reply_markup = kb.registration
     else:
-        await message.answer(
+        text = (
             "<b>Привет!</b>\n\n"
             "Я бот шиномарта, который любит злить бухгалтера и делать для Вас скидки\n"
-            "Вы находитесь в основном меню",
-            parse_mode='HTML',
-            reply_markup=kb.main_menu
+            "Вы находитесь в основном меню"
         )
+        reply_markup = kb.main_menu
+
+    await message.answer(
+        text,
+        parse_mode="HTML",
+        reply_markup=reply_markup
+    )
+
 
 
 
