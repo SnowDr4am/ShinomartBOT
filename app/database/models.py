@@ -24,6 +24,7 @@ class User(Base):
     mobile_phone: Mapped[str] = mapped_column(String, unique=True, nullable=True)
     birthday_date: Mapped[datetime.datetime] = mapped_column(Date, nullable=True)
     role: Mapped[str] = mapped_column(String)
+    balance: Mapped[float] = mapped_column(Float, default=0)
 
 async def async_main():
     async with engine.begin() as conn:

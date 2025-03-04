@@ -36,3 +36,13 @@ async def get_admin_and_employee_ids():
         employee_ids = [row.user_id for row in employee_result]
 
         return admin_ids, employee_ids
+
+
+async def check_mobile_phone(mobile_phone: str) -> bool:
+    async with async_session() as session:
+        return await session.scalar(select(User).where(User.mobile_phone == mobile_phone)) is not None
+
+
+async def check_user_by_id(user_id) -> bool:
+    async with async_session() as session:
+        return await session.scalar(select(User).where(User.id == user_id)) is None
