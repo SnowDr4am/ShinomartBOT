@@ -4,7 +4,7 @@ from typing import Callable, Dict, Any, Awaitable
 
 
 class AdminMiddleware(BaseMiddleware):
-    def __init__(self, admin_list: list[int]) -> None:
+    def __init__(self, admin_list: list[str]) -> None:
         self.admin_list = admin_list
 
     async def __call__(
@@ -21,7 +21,7 @@ class AdminMiddleware(BaseMiddleware):
 
 
 class EmployeeMiddleware(BaseMiddleware):
-    def __init__(self, employee_list: list[int]) -> None:
+    def __init__(self, employee_list: list[str]) -> None:
         self.employee_list = employee_list
 
     async def __call__(
@@ -30,7 +30,7 @@ class EmployeeMiddleware(BaseMiddleware):
             event: Message,
             data: Dict[str, Any]
     ) -> Any:
-        if event.from_user.id not in self.employee_list:
+        if str(event.from_user.id) not in self.employee_list:
             await event.answer("У вас нет доступа к этой команде")
             return
 

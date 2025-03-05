@@ -13,5 +13,11 @@ get_phone_number = ReplyKeyboardMarkup(
 )
 
 main_menu = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Начать регистрацию', callback_data='registration')]
+    [InlineKeyboardButton(text='Профиль', callback_data='profile')],
+    [InlineKeyboardButton(text='Связаться с поддержкой', url='https://t.me/SnowDream5')]
+])
+
+profile = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='История покупок', callback_data='history_purchase')],
+    [InlineKeyboardButton(text='Назад', callback_data='main_menu')],
 ])
