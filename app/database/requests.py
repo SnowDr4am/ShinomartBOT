@@ -1,7 +1,8 @@
-from sqlalchemy import select, func, desc, or_, and_
-
+from sqlalchemy import select, desc
+from datetime import datetime
 from app.database.models import async_session
 from app.database.models import User, UserBonusBalance, PurchaseHistory
+from sqlalchemy.orm import joinedload
 
 
 async def set_user(user_id, date_today, name, mobile_phone, birthday):
@@ -19,6 +20,14 @@ async def set_user(user_id, date_today, name, mobile_phone, birthday):
             )
 
             session.add(new_user)
+            await session.flush()
+
+            new_balance = UserBonusBalance(
+                user_id=new_user.user_id,
+                balance=0
+            )
+            session.add(new_balance)
+
             await session.commit()
 
             return True
@@ -67,7 +76,6 @@ async def get_user_profile(user_id) -> dict:
                 "bonus_balance": await get_bonus_balance(user_id)
             }
             return profile_data
-        return None
 
 
 async def get_bonus_balance(user_id: str) -> float:
@@ -93,3 +101,53 @@ async def get_last_10_transactions(user_id):
         )
         result = await session.execute(query)
         return result.scalars().all()
+
+
+async def get_phone_numbers_by_suffix(suffix: str):
+    async with async_session() as session:
+        query = select(User.mobile_phone).where(User.mobile_phone.endswith(suffix))
+        result = await session.execute(query)
+        phone_numbers = result.scalars().all()
+        return phone_numbers
+
+
+async def get_user_by_phone(phone_number: str):
+    async with async_session() as session:
+        query = (
+            select(User)
+            .where(User.mobile_phone == phone_number)
+            .options(joinedload(User.bonus_balance))
+        )
+        result = await session.execute(query)
+        return result.scalar()
+
+
+async def set_bonus_balance(user_id, action, amount_bonus, amount_cell):
+    async with async_session() as session:
+        query = select(UserBonusBalance).where(UserBonusBalance.user_id == user_id)
+        result = await session.execute(query)
+        bonus_balance = result.scalar()
+
+        if not bonus_balance:
+            return False
+
+        if action == 'add':
+            bonus_balance.balance += amount_bonus
+            transaction_type = "Пополнение"
+        elif action == 'remove':
+            bonus_balance.balance -= amount_bonus
+            transaction_type = "Списание"
+        else:
+            return False
+
+        new_transaction = PurchaseHistory(
+            user_id = user_id,
+            transaction_date = datetime.now(),
+            transaction_type = transaction_type,
+            amount = amount_cell,
+            bonus_amount = amount_bonus
+        )
+        session.add(new_transaction)
+
+        await session.commit()
+        return True
