@@ -31,5 +31,5 @@ new_transaction = InlineKeyboardMarkup(inline_keyboard=[
 
 confirm_transaction = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Подтвердить списание', callback_data='confirm:yes')],
-    [InlineKeyboardButton(text='Отмена', callback_data='confirm:no')]
+    [InlineKeyboardButton(text='Копить баллы', callback_data='confirm:no')]
 ])

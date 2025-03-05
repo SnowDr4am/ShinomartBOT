@@ -59,6 +59,8 @@ async def send_phone_numbers(message: Message, state: FSMContext):
 async def handle_phone_selection(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
+    await callback.message.answer("Операция отменена")
+
     await state.clear()
 
 
