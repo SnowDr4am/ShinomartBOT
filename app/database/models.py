@@ -31,6 +31,7 @@ class PurchaseHistory(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[str] = mapped_column(ForeignKey('users.user_id'), nullable=False)
+    worker_id: Mapped[str] = mapped_column(String, nullable=False)
     transaction_date: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, nullable=False)
     transaction_type: Mapped[str] = mapped_column(String, nullable=False)  # Тип транзакции (Пополнение/Списание)
     amount: Mapped[float] = mapped_column(Float, nullable=False) # Сумма покупки
@@ -42,6 +43,22 @@ class UserBonusBalance(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[str] = mapped_column(ForeignKey('users.user_id'), nullable=False)
     balance: Mapped[float] = mapped_column(Float, default=0, nullable=False)
+
+class BonusSystem(Base):
+    __tablename__ = 'bonus_system'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    cashback: Mapped[int] = mapped_column(Integer, default=5)
+    max_debit: Mapped[int] = mapped_column(Integer, default=30)
+
+class RoleHistory(Base):
+    __tablename__ = 'role_history'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    admin_id: Mapped[str] = mapped_column(String, nullable=False)  # Кто выдал роль
+    user_id: Mapped[str] = mapped_column(String, nullable=False)  # Кому выдал роль
+    role: Mapped[str] = mapped_column(String, nullable=False)  # Какую роль выдал
+    assigned_date: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, nullable=False)  # Дата выдачи роли
 
 async def async_main():
     async with engine.begin() as conn:

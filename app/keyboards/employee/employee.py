@@ -21,8 +21,8 @@ async def generate_phone_numbers_keyboard(phone_numbers: list[str]) -> InlineKey
 
 new_transaction = InlineKeyboardMarkup(inline_keyboard=[
     [
-        InlineKeyboardButton(text='Пополнение', callback_data='action:add'),
-        InlineKeyboardButton(text='Списание', callback_data='action:remove')
+        InlineKeyboardButton(text='Пополнение', callback_data='transaction:add'),
+        InlineKeyboardButton(text='Списание', callback_data='transaction:remove')
     ],
     [
         InlineKeyboardButton(text='Отмена', callback_data='action:cancel')

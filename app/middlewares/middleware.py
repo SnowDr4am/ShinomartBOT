@@ -1,37 +1,44 @@
 from aiogram import BaseMiddleware
 from aiogram.types import Message
 from typing import Callable, Dict, Any, Awaitable
+from app.database.models import async_session
+from sqlalchemy import select
+from app.database.models import User
 
 
 class AdminMiddleware(BaseMiddleware):
-    def __init__(self, admin_list: list[str]) -> None:
-        self.admin_list = admin_list
-
     async def __call__(
             self,
             handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
             event: Message,
             data: Dict[str, Any]
     ) -> Any:
-        if event.from_user.id not in self.admin_list:
-            await event.answer("У вас нет доступа к этой команде")
-            return
+        async with async_session() as session:
+            query = select(User.role).where(User.user_id == str(event.from_user.id))
+            result = await session.execute(query)
+            role = result.scalar()
+
+            if role != "Администратор":
+                await event.answer("У вас нет доступа к этой команде")
+                return
 
         return await handler(event, data)
 
 
 class EmployeeMiddleware(BaseMiddleware):
-    def __init__(self, employee_list: list[str]) -> None:
-        self.employee_list = employee_list
-
     async def __call__(
             self,
             handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
             event: Message,
             data: Dict[str, Any]
     ) -> Any:
-        if str(event.from_user.id) not in self.employee_list:
-            await event.answer("У вас нет доступа к этой команде")
-            return
+        async with async_session() as session:
+            query = select(User.role).where(User.user_id == str(event.from_user.id))
+            result = await session.execute(query)
+            role = result.scalar()
+
+            if role not in ["Работник", "Администратор"]:
+                await event.answer("У вас нет доступа к этой команде")
+                return
 
         return await handler(event, data)

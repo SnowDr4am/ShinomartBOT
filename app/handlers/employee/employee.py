@@ -92,7 +92,7 @@ async def handle_phone_selection(callback: CallbackQuery, state: FSMContext):
         return
 
 
-@employee_router.callback_query(GetUser.select_action, F.data.startswith("action:"))
+@employee_router.callback_query(GetUser.select_action, F.data.startswith("transaction:"))
 async def handle_action_selection(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     action = callback.data.split(":")[1]
@@ -149,7 +149,7 @@ async def handle_amount_input(message: Message, state: FSMContext):
 
     if action == 'add':
         amount_bonus = amount*0.05
-        success = await rq.set_bonus_balance(message.from_user.id, "add", amount_bonus, amount)
+        success = await rq.set_bonus_balance(message.from_user.id, "add", amount_bonus, amount, message.from_user.id)
         if success:
             await message.answer(f"Начислено {amount_bonus:.2f} бонусов пользователю {user_data.name}")
         else:
@@ -184,13 +184,13 @@ async def confirm_deduction(callback: CallbackQuery, state: FSMContext):
 
     if action == 'no':
         amount_bonus = amount * 0.05
-        success = await rq.set_bonus_balance(callback.from_user.id, "add", amount_bonus, amount)
+        success = await rq.set_bonus_balance(callback.from_user.id, "add", amount_bonus, amount, callback.from_user.id)
         if success:
             await callback.message.answer(f"Начислено {amount_bonus:.2f} бонусов пользователю {user_data.name}")
         else:
             await callback.message.answer(f"Возникла ошибка при зачислении бонусов")
     else:
-        success = await rq.set_bonus_balance(callback.from_user.id, "remove", bonus_deduction, amount)
+        success = await rq.set_bonus_balance(callback.from_user.id, "remove", bonus_deduction, amount, callback.from_user.id)
         if success:
             await callback.message.answer(f"Списано {bonus_deduction:.2f} бонусов пользователя {user_data.name}\n"
                                           f"Итоговая цена для клиента: {amount-bonus_deduction}")

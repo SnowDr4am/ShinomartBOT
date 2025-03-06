@@ -1,7 +1,7 @@
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, func
 from datetime import datetime
 from app.database.models import async_session
-from app.database.models import User, UserBonusBalance, PurchaseHistory
+from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem
 from sqlalchemy.orm import joinedload
 
 
@@ -122,7 +122,7 @@ async def get_user_by_phone(phone_number: str):
         return result.scalar()
 
 
-async def set_bonus_balance(user_id, action, amount_bonus, amount_cell):
+async def set_bonus_balance(user_id, action, amount_bonus, amount_cell, worker_id):
     async with async_session() as session:
         query = select(UserBonusBalance).where(UserBonusBalance.user_id == user_id)
         result = await session.execute(query)
@@ -142,6 +142,7 @@ async def set_bonus_balance(user_id, action, amount_bonus, amount_cell):
 
         new_transaction = PurchaseHistory(
             user_id = user_id,
+            worker_id=worker_id,
             transaction_date = datetime.now(),
             transaction_type = transaction_type,
             amount = amount_cell,
@@ -151,3 +152,22 @@ async def set_bonus_balance(user_id, action, amount_bonus, amount_cell):
 
         await session.commit()
         return True
+
+
+async def get_bonus_system_settings():
+    async with async_session() as session:
+        query = select(BonusSystem.cashback, BonusSystem.max_debit)
+        result = await session.execute(query)
+        settings = result.first()
+
+        if not settings:
+            new_settings = BonusSystem(cashback=5, max_debit=30)
+            session.add(new_settings)
+            await session.commit()
+
+            result = await session.execute(query)
+            settings = result.first()
+        return {
+            "cashback": settings.cashback,
+            "max_debit": settings.max_debit,
+        }
