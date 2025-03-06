@@ -41,6 +41,6 @@ pip install -r requirements.txt
 
 ### 4. Установите токен вашего бота
 
-По пути: app/servers/ создайте .env файл и поместите в него следующую строчку: BOT_TOKEN=... (токен вашего бота)
+app/serevers/env.example
 
 ### 5. Запустите бота - run.py
