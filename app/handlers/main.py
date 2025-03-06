@@ -1,7 +1,5 @@
 from aiogram import Router
 from app.middlewares.middleware import AdminMiddleware, EmployeeMiddleware
-import app.database.requests as rq
-from datetime import datetime
 
 
 user_router = Router(name='user_router')

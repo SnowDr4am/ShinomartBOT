@@ -1,11 +1,11 @@
 from aiogram import F
-from aiogram.filters import CommandStart
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from datetime import datetime
 import re
 
+from app.handlers.user.user import cmd_start
 from app.handlers.main import user_router
 import app.keyboards.user.user as kb
 import app.database.requests as rq
@@ -20,15 +20,16 @@ class GetUserInfo(StatesGroup):
 @user_router.callback_query(F.data == 'registration')
 async def registration(callback: CallbackQuery, state: FSMContext):
     await callback.answer("")
-    await callback.message.answer(
-        "Для регистрации мне необходимо собрать о Вас следующую информацию:\n"
-        "— <b>Ваше имя</b>\n"
-        "— <b>Ваш номер телефона</b>\n"
-        "— <b>Дату рождения</b>\n\n",
+    await callback.message.edit_text(
+        "📝 <b>Для регистрации мне необходимо собрать о Вас следующую информацию:</b>\n"
+        "— 👤 <b>Ваше имя</b>\n"
+        "— 📞 <b>Ваш номер телефона</b>\n"
+        "— 🎂 <b>Дату рождения</b>\n\n",
         parse_mode="HTML"
     )
     await callback.message.answer(
-        "Напишите, пожалуйста, Ваше имя"
+        "🖊️ <b>Напишите, пожалуйста, Ваше имя</b>",
+        parse_mode='HTML'
     )
     await state.set_state(GetUserInfo.name)
 
@@ -39,7 +40,8 @@ async def get_name(message: Message, state: FSMContext):
     await state.update_data(name=user_input)
 
     await message.answer(
-        "Напишите, пожалуйста, ваш номер телефона",
+        "📱 <b>Напишите, пожалуйста, ваш номер телефона</b>",
+        parse_mode='HTML',
         reply_markup=kb.get_phone_number
     )
 
@@ -54,37 +56,55 @@ async def get_mobile_phone(message: Message, state: FSMContext):
         else:
             user_input = message.text
             if not user_input:
-                await message.answer("Вы не ввели номер телефона.")
+                await message.answer(
+                    "⚠️ <b>Вы не ввели номер телефона.</b>",
+                        parse_mode='HTML'
+                )
                 return
 
             cleaned_number = re.sub(r'\D', '', user_input)
 
         if not cleaned_number or cleaned_number[0] not in ('7', '8'):
-            await message.answer("Некорректный формат номера. Номер должен начинаться с 7 или 8.")
+            await message.answer(
+                "❌ <b>Некорректный формат номера.</b> Номер должен начинаться с 7 или 8.",
+                parse_mode='HTML'
+            )
+
             return
 
         if cleaned_number[0] == '7':
             cleaned_number = '8' + cleaned_number[1:]
 
         if len(cleaned_number) != 11:
-            await message.answer("Некорректная длина номера. Номер должен содержать 11 цифр.")
+            await message.answer(
+                "❌ <b>Некорректная длина номера.</b> Номер должен содержать 11 цифр",
+                parse_mode='HTML'
+            )
             return
 
         if await rq.check_mobile_phone(cleaned_number):
-            await message.answer("Номер телефона уже зарегистрирован")
+            await message.answer(
+                "🚫 <b>Номер телефона уже зарегистрирован.</b>",
+                parse_mode='HTML'
+            )
             return
 
         await state.update_data(mobile_phone=cleaned_number)
 
         await state.set_state(GetUserInfo.birthday)
-        await message.answer("Напишите вашу дату рождения\n"
-                            "Пример: <code>26.02.2025</code>",
-                             parse_mode='HTML',
-                             reply_markup=ReplyKeyboardRemove())
+        await message.answer(
+            "📅 <b>Напишите вашу дату рождения</b>\n"
+            "Пример: <code>26.02.2025</code>",
+            parse_mode='HTML',
+            reply_markup=ReplyKeyboardRemove()
+        )
 
     except Exception as e:
         print(f"Ошибка: {e}")
-        await message.answer("Произошла ошибка при обработке номера телефона. Попробуйте ещё раз.")
+        await message.answer(
+            "⚠️ <b>Произошла ошибка при обработке номера телефона.</b> Попробуйте ещё раз",
+            parse_mode='HTML'
+        )
 
 
 @user_router.message(GetUserInfo.birthday)
@@ -107,7 +127,7 @@ async def get_birthday_date(message: Message, state: FSMContext):
                 continue
 
         if not parsed_date:
-            await message.answer("Некорректный формат даты. Используйте ДД.ММ.ГГГГ.")
+            await message.answer("❌ <b>Некорректный формат даты.</b> Используйте ДД.ММ.ГГГГ.", parse_mode='HTML')
             return
 
         formatted_date = parsed_date.strftime("%d.%m.%Y")
@@ -122,14 +142,16 @@ async def get_birthday_date(message: Message, state: FSMContext):
 
         if await rq.set_user(message.from_user.id, datetime.now(), name, number, birthday_date_obj):
             await message.answer(
-                f"Регистрация завершена.\n"
-                f"Имя: {name}\n"
-                f"Телефон: {number}\n"
-                f"Дата рождения: {formatted_date}"
+                f"✅ <b>Регистрация завершена.</b>\n"
+                f"👤 <b>Имя:</b> {name}\n"
+                f"📞 <b>Телефон:</b> {number}\n"
+                f"🎂 <b>Дата рождения:</b> {formatted_date}",
+                parse_mode='HTML'
             )
-        else:
-            await message.answer("Внутренняя ошибка. Попробуйте позже.")
 
+            await cmd_start(message)
+        else:
+            await message.answer("🚨 <b>Внутренняя ошибка.</b> Попробуйте позже.", parse_mode='HTML')
     except Exception as e:
-        await message.answer("Ошибка обработки даты. Попробуйте ещё раз.")
+        await message.answer("⚠️ <b>Ошибка обработки даты.</b> Попробуйте ещё раз.", parse_mode='HTML')
         print(f"Ошибка: {e}")

@@ -19,7 +19,7 @@ class AdminMiddleware(BaseMiddleware):
             role = result.scalar()
 
             if role != "Администратор":
-                await event.answer("У вас нет доступа к этой команде")
+                await event.answer("❌ У вас нет доступа к этой команде")
                 return
 
         return await handler(event, data)
@@ -38,7 +38,7 @@ class EmployeeMiddleware(BaseMiddleware):
             role = result.scalar()
 
             if role not in ["Работник", "Администратор"]:
-                await event.answer("У вас нет доступа к этой команде")
+                await event.answer("❌ У вас нет доступа к этой команде")
                 return
 
         return await handler(event, data)

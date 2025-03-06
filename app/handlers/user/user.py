@@ -1,11 +1,6 @@
 from aiogram import F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
-from datetime import datetime
-import re
 
 from app.handlers.main import user_router
 import app.keyboards.user.user as kb
@@ -16,16 +11,18 @@ import app.database.requests as rq
 async def cmd_start(message: Message):
     if await rq.check_user_by_id(message.from_user.id):
         text = (
-            "<b>Привет!</b>\n\n"
-            "Я бот шиномарта, который любит злить бухгалтера и делать для Вас скидки\n"
-            "Вы находитесь в основном меню"
+            "<b>Привет, друг!</b>\n\n"
+            "<b>Я — твой личный помощник в шиномарте</b> 🚗💨\n\n"
+            "Здесь ты можешь получить скидки, акции и все, что нужно для твоего удобства.\n\n"
+            "Выбери нужный раздел из меню ниже 👇"
         )
         reply_markup = kb.main_menu
     else:
         text = (
             "<b>Привет!</b>\n\n"
-            "Я бот шиномарта, который любит злить бухгалтера и делать для Вас скидки\n\n"
-            "Для начала сотрудничества с нами, Вам необходимо зарегистрироваться"
+            "<b>Я — твой личный помощник в шиномарте</b> 🚗💨\n\n"
+            "Здесь ты можешь получить крутые скидки, акции и все, что нужно для твоего удобства 🎉\n\n"
+            "Чтобы начать сотрудничество, просто пройди регистрацию — это займет всего пару минут ⏳"
         )
         reply_markup = kb.registration
 
@@ -40,9 +37,10 @@ async def cmd_start(message: Message):
 async def main_menu(callback: CallbackQuery):
     await callback.answer("")
     await callback.message.answer(
-        text="<b>Привет!</b>\n\n"
-        "Я бот шиномарта, который любит злить бухгалтера и делать для Вас скидки\n"
-        "Вы находитесь в основном меню",
+        text="<b>Привет, друг!</b>\n\n"
+            "<b>Я — твой личный помощник в шиномарте</b> 🚗💨\n\n"
+            "Здесь ты можешь получить скидки, акции и все, что нужно для твоего удобства.\n\n"
+            "Выбери нужный раздел из меню ниже 👇",
         parse_mode="HTML", reply_markup=kb.main_menu
     )
 
@@ -71,11 +69,11 @@ async def profile(callback: CallbackQuery):
         )
     else:
         profile_message = (
-            "<b>Профиль не найден</b>\n\n"
-            "<i>Пожалуйста, попробуйте позже или обратитесь в поддержку.</i>"
+            "<b>❌ Профиль не найден</b>\n\n"
+            "<i>😔 К сожалению, не удалось найти ваш профиль. Пожалуйста, попробуйте позже или свяжитесь с нашей поддержкой для помощи 📞.</i>"
         )
 
-    await callback.message.answer(profile_message, parse_mode="HTML", reply_markup=kb.profile)
+    await callback.message.edit_text(profile_message, parse_mode="HTML", reply_markup=kb.profile)
 
 
 @user_router.callback_query(F.data == 'history_purchase')
@@ -86,7 +84,7 @@ async def history_purchase(callback: CallbackQuery):
     transactions = await rq.get_last_10_transactions(user_id)
 
     if not transactions:
-        await callback.message.answer("История покупок пуста")
+        await callback.message.answer("🛒 История покупок пуста. \nВаши покупки появятся здесь, как только вы сделаете заказ! 😊")
         return
 
     history_message = "📊 <b>История последних 10 покупок/списаний:</b>\n\n"

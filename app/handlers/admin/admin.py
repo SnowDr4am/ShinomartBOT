@@ -5,23 +5,29 @@ from app.handlers.main import admin_router
 import app.keyboards.admin.admin as kb
 import app.database.admin_requests as rq
 import app.database.requests as common_rq
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
+
 
 @admin_router.message(Command("admin"))
 async def cmd_job(message: Message):
-    await message.answer("Вы перешли в меню администратора\n"
-                         "Все взаимодействия будут происходить через кнопки снизу",
-                         parse_mode='HTML', reply_markup=kb.main_menu)
+    await message.answer(
+        "<b>Вы перешли в меню администратора</b>\n\n"
+        "📌 Все взаимодействия будут происходить через кнопки ниже.",
+        parse_mode='HTML',
+        reply_markup=kb.main_menu
+    )
+
 
 @admin_router.callback_query(F.data == 'back_to_main')
 async def back_to_main(callback: CallbackQuery):
     await callback.answer()
 
-    await callback.message.answer("Вы перешли в меню администратора\n"
-                                "Все взаимодействия будут происходить через кнопки снизу",
+    await callback.message.edit_text(
+        "<b>Вы перешли в меню администратора</b>\n\n"
+        "📌 Все взаимодействия будут происходить через кнопки ниже.",
+        parse_mode='HTML',
         reply_markup=kb.main_menu
     )
+
 
 @admin_router.callback_query(F.data == 'statistics')
 async def statistics(callback: CallbackQuery):
@@ -29,15 +35,16 @@ async def statistics(callback: CallbackQuery):
 
     stats = await rq.get_statistics(period="all")
 
-    await callback.message.answer(
-        f"Статистика бота {stats['period_label']}:\n\n"
-        f"Общее число пользователей: {stats['total_users']}\n"
-        f"Общая сумма покупок пользователей: {stats['total_amount']}\n"
-        f"Общая сумма выданных бонусов: {stats['total_bonus_amount']}\n"
-        f"Общее количество транзакций: {stats['total_transactions']}\n"
-        f"Средняя сумма покупки: {stats['average_purchase_amount']:.2f}\n"
-        f"Количество активных пользователей: {stats['active_users']}\n"
-        f"Общая сумма бонусов на балансах: {stats['total_bonus_balance']}",
+    await callback.message.edit_text(
+        f"<b>📊 Статистика бота за {stats['period_label']}:</b>\n\n"
+        f"👥 <b>Общее число пользователей:</b> {stats['total_users']}\n"
+        f"💰 <b>Общая сумма покупок:</b> {stats['total_amount']} ₽\n"
+        f"🎁 <b>Общая сумма выданных бонусов:</b> {stats['total_bonus_amount']} ₽\n"
+        f"🔄 <b>Общее количество транзакций:</b> {stats['total_transactions']}\n"
+        f"📈 <b>Средняя сумма покупки:</b> {stats['average_purchase_amount']:.2f} ₽\n"
+        f"🟢 <b>Количество активных пользователей:</b> {stats['active_users']}\n"
+        f"💳 <b>Общая сумма бонусов на балансах:</b> {stats['total_bonus_balance']} ₽",
+        parse_mode="HTML",
         reply_markup=kb.time_period
     )
 
@@ -51,14 +58,15 @@ async def handle_statistics_period(callback: CallbackQuery):
     stats = await rq.get_statistics(period=period)
 
     await callback.message.edit_text(
-        f"Статистика бота {stats['period_label']}:\n\n"
-        f"Общее число пользователей: {stats['total_users']}\n"
-        f"Общая сумма покупок пользователей: {stats['total_amount']}\n"
-        f"Общая сумма выданных бонусов: {stats['total_bonus_amount']}\n"
-        f"Общее количество транзакций: {stats['total_transactions']}\n"
-        f"Средняя сумма покупки: {stats['average_purchase_amount']:.2f}\n"
-        f"Количество активных пользователей: {stats['active_users']}\n"
-        f"Общая сумма бонусов на балансах: {stats['total_bonus_balance']}",
+        f"<b>📊 Статистика бота за {stats['period_label']}:</b>\n\n"
+        f"👥 <b>Общее число пользователей:</b> {stats['total_users']}\n"
+        f"💰 <b>Общая сумма покупок:</b> {stats['total_amount']} ₽\n"
+        f"🎁 <b>Общая сумма выданных бонусов:</b> {stats['total_bonus_amount']} ₽\n"
+        f"🔄 <b>Общее количество транзакций:</b> {stats['total_transactions']}\n"
+        f"📈 <b>Средняя сумма покупки:</b> {stats['average_purchase_amount']:.2f} ₽\n"
+        f"🟢 <b>Количество активных пользователей:</b> {stats['active_users']}\n"
+        f"💳 <b>Общая сумма бонусов на балансах:</b> {stats['total_bonus_balance']} ₽",
+        parse_mode="HTML",
         reply_markup=kb.time_period
     )
 
@@ -69,11 +77,12 @@ async def bonus_system(callback: CallbackQuery):
 
     settings = await common_rq.get_bonus_system_settings()
 
-    await callback.message.answer(
-        f"<b>Общая информация о бонусной системе</b>\n\n"
-        f"Текущий кешбек с покупок: <b>{settings['cashback']}%</b>\n"
-        f"Максимальное списание с покупки: <b>{settings['max_debit']}%</b>",
-        parse_mode='HTML', reply_markup=kb.bonus_system
+    await callback.message.edit_text(
+        "<b>💎 Общая информация о бонусной системе</b>\n\n"
+        f"🔹 <b>Текущий кэшбек с покупок:</b> {settings['cashback']}%\n"
+        f"🔹 <b>Максимальное списание с покупки:</b> {settings['max_debit']}%",
+        parse_mode='HTML',
+        reply_markup=kb.bonus_system
     )
 
 
@@ -81,18 +90,23 @@ async def bonus_system(callback: CallbackQuery):
 async def employee_list(callback: CallbackQuery):
     await callback.answer()
 
-    await callback.message.answer(
-        f"Вы находитесь в меню управления персоналом\n"
-        f"Воспользуйтесь меню ниже для управления",
-        parse_mode='HTML', reply_markup=kb.manage_workers
+    await callback.message.edit_text(
+        "<b>👥 Меню управления персоналом</b>\n\n"
+        "📌 Используйте кнопки ниже для управления.",
+        parse_mode='HTML',
+        reply_markup=kb.manage_workers
     )
+
 
 @admin_router.callback_query(F.data == "personal")
 async def employee_list(callback: CallbackQuery):
     await callback.answer()
 
-    await callback.message.answer("Выберите какой список вы хотите посмотреть",
-                                  reply_markup=kb.view_personal_type)
+    await callback.message.edit_text(
+        "<b>📋 Выберите список для просмотра:</b>\n\n",
+        parse_mode="HTML",
+        reply_markup=kb.view_personal_type
+    )
 
 @admin_router.callback_query(F.data.startswith("personal_list:"))
 async def employee_list(callback: CallbackQuery):
@@ -103,13 +117,13 @@ async def employee_list(callback: CallbackQuery):
     admin_dict, employee_dict = await rq.get_admin_and_employees_names()
 
     if personal_type == 'worker':
-        personal_type = "Отображаю список работников"
+        personal_type = "<b>👷‍♂️ Отображаю список работников:</b>"
         keyboard = await kb.inline_personal(employee_dict)
     else:
-        personal_type = "Отображаю список администраторов"
+        personal_type = "<b>👑 Отображаю список администраторов:</b>"
         keyboard = await kb.inline_personal(admin_dict)
 
-    await callback.message.edit_text(personal_type, reply_markup=keyboard)
+    await callback.message.edit_text(personal_type, parse_mode='HTML', reply_markup=keyboard)
 
 
 @admin_router.callback_query(F.data.startswith("employee_profile:"))
@@ -131,18 +145,16 @@ async def view_employee_profile(callback: CallbackQuery):
 
     keyboard = await kb.employee_stats(user_id)
 
-    await callback.message.answer(
-        f"<b>Профиль работника:</b>\n\n"
-        f"Имя: {stats['name']}\n"
-        f"User ID: {stats['user_id']}\n"
-        f"Дата выдачи роли: {stats['role_assigned_date']}\n\n"
-        f"<b>Статистика ({stats['period_label']}):</b>\n"
-        f"Всего транзакций: {stats['total_transactions']}\n"
-        f"Общая сумма: {stats['total_amount']}\n"
-        f"Сумма пополнений: {stats['total_add']}\n"
-        f"Сумма списаний: {stats['total_remove']}",
-        parse_mode='HTML', reply_markup=keyboard
+    await callback.message.edit_text(
+        f"<b>👤 Профиль работника</b>\n\n"
+        f"📌 <b>Имя:</b> {stats['name']}\n"
+        f"🆔 <b>User ID:</b> {stats['user_id']}\n"
+        f"📅 <b>Дата выдачи роли:</b> {stats['role_assigned_date']}\n\n"
+        f"<b>📊 Статистика ({stats['period_label']})</b>\n"
+        f"🔹 <b>Всего транзакций:</b> {stats['total_transactions']}\n"
+        f"💰 <b>Общая сумма:</b> {stats['total_amount']}\n"
+        f"➕ <b>Сумма пополнений:</b> {stats['total_add']}\n"
+        f"➖ <b>Сумма списаний:</b> {stats['total_remove']}",
+        parse_mode="HTML",
+        reply_markup=keyboard
     )
-
-
-

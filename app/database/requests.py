@@ -1,4 +1,4 @@
-from sqlalchemy import select, desc, func
+from sqlalchemy import select, desc
 from datetime import datetime
 from app.database.models import async_session
 from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem
