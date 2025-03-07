@@ -149,6 +149,8 @@ async def get_birthday_date(message: Message, state: FSMContext):
                 parse_mode='HTML'
             )
 
+            await state.clear()
+
             await cmd_start(message)
         else:
             await message.answer("🚨 <b>Внутренняя ошибка.</b> Попробуйте позже.", parse_mode='HTML')
