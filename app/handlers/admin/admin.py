@@ -86,6 +86,26 @@ async def bonus_system(callback: CallbackQuery):
     )
 
 
+@admin_router.callback_query(F.data == 'interact_with_user_bonus')
+async def interact_with_users_bonus(callback: CallbackQuery):
+    await callback.answer()
+
+    await callback.message.edit_text(
+        "Вы перешли в раздел взаимодействия с бонусами пользователей\n"
+        "Воспользуйтесь меню ниже для управления:",
+        parse_mode='HTML',
+        reply_markup=kb.users_balance
+    )
+
+
+@admin_router.callback_query(F.data.startswith("bonus_users:"))
+async def employee_list(callback: CallbackQuery):
+    await callback.answer()
+
+    _, balance = callback.data.split(":")
+
+
+
 @admin_router.callback_query(F.data == "employees")
 async def employee_list(callback: CallbackQuery):
     await callback.answer()

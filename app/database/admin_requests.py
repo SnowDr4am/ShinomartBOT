@@ -202,3 +202,7 @@ async def get_worker_statistics(worker_id, period: str = "all"):
             "total_remove": total_remove,
             "period_label": period_label,
         }
+
+
+async def get_users_with_bonus(balance):
+    async with async_session() as session:
