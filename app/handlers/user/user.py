@@ -3,6 +3,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 
 from app.handlers.main import user_router
+from app.servers.config import PHONE_NUMBER
 import app.keyboards.user.user as kb
 import app.database.requests as rq
 
@@ -36,7 +37,7 @@ async def cmd_start(message: Message):
 @user_router.callback_query(F.data == 'main_menu')
 async def main_menu(callback: CallbackQuery):
     await callback.answer("")
-    await callback.message.answer(
+    await callback.message.edit_text(
         text="<b>Привет, друг!</b>\n\n"
             "<b>Я — твой личный помощник в шиномарте</b> 🚗💨\n\n"
             "Здесь ты можешь получить скидки, акции и все, что нужно для твоего удобства.\n\n"
@@ -116,3 +117,15 @@ async def delete_history_message(callback: CallbackQuery):
     await callback.answer()
 
     await callback.message.delete()
+
+
+@user_router.callback_query(F.data == "contact")
+async def contact_us(callback: CallbackQuery):
+    await callback.answer()
+
+    await callback.message.edit_text(
+        f"Номер телефона для связи с нами:\n"
+        f"{PHONE_NUMBER}",
+        parse_mode='HTML',
+        reply_markup=kb.back_to_main_menu
+    )

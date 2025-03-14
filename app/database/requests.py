@@ -1,4 +1,4 @@
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, func, case
 from datetime import datetime
 from app.database.models import async_session
 from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem
@@ -173,4 +173,51 @@ async def get_bonus_system_settings():
         return {
             "cashback": settings.cashback,
             "max_debit": settings.max_debit,
+        }
+
+
+async def get_monthly_report(year: int, month: int) -> dict:
+    async with async_session() as session:
+        start_date = datetime(year, month, 1)
+        if month == 12:
+            end_date = datetime(year + 1, 1, 1)
+        else:
+            end_date = datetime(year, month + 1, 1)
+
+        new_users_query = (
+            select(func.count(User.id))
+            .where(User.registration_date >= start_date)
+            .where(User.registration_date < end_date)
+        )
+        new_users = await session.scalar(new_users_query) or 0
+
+        transactions_query = (
+            select(
+                func.count(PurchaseHistory.id).label("sales_count"),
+                func.sum(PurchaseHistory.amount).label("sales_amount"),
+                func.sum(
+                    case(
+                        (PurchaseHistory.transaction_type == "Пополнение", PurchaseHistory.bonus_amount),
+                        else_=0
+                    )
+                ).label("bonuses_added"),
+                func.sum(
+                    case(
+                        (PurchaseHistory.transaction_type == "Списание", PurchaseHistory.bonus_amount),
+                        else_=0
+                    )
+                ).label("bonuses_spent")
+            )
+            .where(PurchaseHistory.transaction_date >= start_date)
+            .where(PurchaseHistory.transaction_date < end_date)
+        )
+        result = await session.execute(transactions_query)
+        row = result.one()
+
+        return {
+            "new_users": new_users,
+            "sales_count": row.sales_count or 0,
+            "sales_amount": row.sales_amount or 0.0,
+            "bonuses_added": row.bonuses_added or 0.0,
+            "bonuses_spent": row.bonuses_spent or 0.0
         }

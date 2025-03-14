@@ -16,7 +16,7 @@ get_phone_number = ReplyKeyboardMarkup(
 # Главное меню
 main_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='👤 Профиль', callback_data='profile')],
-    [InlineKeyboardButton(text='💬 Связаться с поддержкой', url='https://t.me/SnowDream5')]
+    [InlineKeyboardButton(text='💬 Связаться с нами', callback_data='contact')]
 ])
 
 # Меню профиля
@@ -28,4 +28,8 @@ profile = InlineKeyboardMarkup(inline_keyboard=[
 
 delete_button_user = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="❌ Удалить сообщение", callback_data='delete_button_user')]
+])
+
+back_to_main_menu = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='🔙 Назад', callback_data='main_menu')]
 ])
