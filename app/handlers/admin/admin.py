@@ -30,6 +30,11 @@ async def back_to_main(callback: CallbackQuery):
     )
 
 
+@admin_router.callback_query(F.data == "none")
+async def handle_none(callback: CallbackQuery):
+    await callback.answer()
+
+
 @admin_router.callback_query(F.data == 'statistics')
 async def statistics(callback: CallbackQuery):
     await callback.answer()
@@ -37,7 +42,7 @@ async def statistics(callback: CallbackQuery):
     stats = await rq.get_statistics(period="all")
 
     await callback.message.edit_text(
-        f"<b>📊 Статистика бота за {stats['period_label']}:</b>\n\n"
+        f"<b>📊 Статистика бота {stats['period_label']}:</b>\n\n"
         f"👥 <b>Общее число пользователей:</b> {stats['total_users']}\n"
         f"💰 <b>Общая сумма покупок:</b> {stats['total_amount']} ₽\n"
         f"🎁 <b>Общая сумма выданных бонусов:</b> {stats['total_bonus_amount']} ₽\n"
@@ -59,7 +64,7 @@ async def handle_statistics_period(callback: CallbackQuery):
     stats = await rq.get_statistics(period=period)
 
     await callback.message.edit_text(
-        f"<b>📊 Статистика бота за {stats['period_label']}:</b>\n\n"
+        f"<b>📊 Статистика бота {stats['period_label']}:</b>\n\n"
         f"👥 <b>Общее число пользователей:</b> {stats['total_users']}\n"
         f"💰 <b>Общая сумма покупок:</b> {stats['total_amount']} ₽\n"
         f"🎁 <b>Общая сумма выданных бонусов:</b> {stats['total_bonus_amount']} ₽\n"
@@ -85,65 +90,6 @@ async def bonus_system(callback: CallbackQuery):
         parse_mode='HTML',
         reply_markup=kb.bonus_system
     )
-
-
-@admin_router.callback_query(F.data == 'interact_with_user_bonus')
-async def interact_with_users_bonus(callback: CallbackQuery):
-    await callback.answer()
-
-    await callback.message.edit_text(
-        "Вы перешли в раздел взаимодействия с бонусами пользователей\n"
-        "Воспользуйтесь меню ниже для управления:",
-        parse_mode='HTML',
-        reply_markup=kb.users_balance
-    )
-
-
-@admin_router.callback_query(F.data.startswith("bonus_users:"))
-async def employee_list(callback: CallbackQuery, state: FSMContext):
-    await callback.answer()
-
-    _, balance = callback.data.split(":")
-    balance = float(balance)
-
-    users_dict = await rq.get_users_by_balance(balance)
-
-    await state.update_data(users_dict=users_dict)
-
-    keyboard = await kb.create_users_keyboard(users_dict, page=1)
-
-    await callback.message.answer(
-        "Отображаю список пользователей",
-        reply_markup=keyboard
-    )
-
-
-@admin_router.callback_query(F.data.startswith("bonus_user:"))
-async def view_user_profile(callback: CallbackQuery):
-    await callback.answer()
-
-    _, user_id = callback.data.split(":")
-
-    print(f"Выбран пользователь с user_id: {user_id}")
-
-
-@admin_router.callback_query(F.data.startswith("page:"))
-async def handle_pagination(callback: CallbackQuery, state: FSMContext):
-    await callback.answer()
-
-    page = int(callback.data.split(":")[1])
-
-    data = await state.get_data()
-    users_dict = data.get("users_dict", {})
-
-    keyboard = await kb.create_users_keyboard(users_dict, page=page)
-
-    await callback.message.edit_reply_markup(reply_markup=keyboard)
-
-
-@admin_router.callback_query(F.data == "none")
-async def handle_none(callback: CallbackQuery):
-    await callback.answer()
 
 
 @admin_router.callback_query(F.data == "employees")

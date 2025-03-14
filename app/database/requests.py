@@ -135,7 +135,10 @@ async def set_bonus_balance(user_id, action, amount_bonus, amount_cell, worker_i
             bonus_balance.balance += amount_bonus
             transaction_type = "Пополнение"
         elif action == 'remove':
-            bonus_balance.balance -= amount_bonus
+            if bonus_balance.balance < amount_bonus:
+                bonus_balance.balance = 0
+            else:
+                bonus_balance.balance -= amount_bonus
             transaction_type = "Списание"
         else:
             return False

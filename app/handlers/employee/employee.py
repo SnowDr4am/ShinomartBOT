@@ -3,6 +3,8 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import StatesGroup, State
+from sqlalchemy.util import await_only
+
 from app.handlers.main import employee_router
 import app.keyboards.employee.employee as kb
 import app.database.requests as rq
@@ -58,7 +60,7 @@ async def add_bonus(message: Message, state: FSMContext):
 async def send_phone_numbers(message: Message, state: FSMContext):
     user_input = message.text
 
-    if user_input.lower() == '❌ Отмена':
+    if "отмена" in user_input.lower():
         await state.clear()
         await message.answer(
             "❌ <b>Операция отменена</b> 🔄\n\n"
@@ -147,11 +149,12 @@ async def handle_action_selection(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     action = callback.data.split(":")[1]
 
-    if action == 'cancel':
+    if action == "cancel":
         await state.clear()
         await callback.message.answer(
-            "❌ <b>Операция отменена</b>",
-            parse_mode='HTML'
+            "❌ <b>Операция отменена</b> 🔄\n\n"
+            "Вы успешно вышли из текущего процесса. Если хотите начать снова, просто выберите нужное действие."
+            , parse_mode='HTML'
         )
         return
 
@@ -163,14 +166,16 @@ async def handle_action_selection(callback: CallbackQuery, state: FSMContext):
     if action == 'add':
         await callback.message.edit_text(
             f"💳 <b>Вы выбрали пополнение бонусов для номера:</b> {phone_number}\n"
-            "💰 <b>Введите сумму покупки:</b>",
+            "💰 <b>Введите сумму покупки:</b>\n\n"
+            "🔍 <i>Для отмены операции нажмите или напишите 'отмена'</i>",
             parse_mode='HTML'
         )
         await state.set_state(GetUser.amount)
     elif action == 'remove':
         await callback.message.edit_text(
             f"❌ <b>Вы выбрали списание бонусов для номера:</b> {phone_number}\n"
-            "💸 <b>Введите сумму покупки:</b>",
+            "💸 <b>Введите сумму покупки:</b>\n\n"
+            "🔍 <i>Для отмены операции нажмите или напишите 'отмена'</i>",
             parse_mode='HTML'
         )
 
@@ -180,6 +185,15 @@ async def handle_action_selection(callback: CallbackQuery, state: FSMContext):
 @employee_router.message(GetUser.amount)
 async def handle_amount_input(message: Message, state: FSMContext):
     user_input = message.text.strip()
+
+    if "отмена" in user_input.lower():
+        await state.clear()
+        await message.answer(
+            "❌ <b>Операция отменена</b> 🔄\n\n"
+            "Вы успешно вышли из текущего процесса. Если хотите начать снова, просто выберите нужное действие."
+            , parse_mode='HTML'
+        )
+        return
 
     try:
         amount = float(user_input)
@@ -250,6 +264,16 @@ async def handle_amount_input(message: Message, state: FSMContext):
 async def confirm_deduction(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     action = callback.data.split(":")[1]
+
+    if action == "cancel":
+        await state.clear()
+        await callback.message.answer(
+            "❌ <b>Операция отменена</b> 🔄\n\n"
+            "Вы успешно вышли из текущего процесса. Если хотите начать снова, просто выберите нужное действие."
+            , parse_mode='HTML'
+        )
+        return
+
     data = await state.get_data()
     phone_number = data.get("phone_number")
     bonus_deduction = data.get("bonus_deduction")

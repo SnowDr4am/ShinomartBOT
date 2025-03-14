@@ -24,3 +24,8 @@ profile = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='🛒 История покупок', callback_data='history_purchase')],
     [InlineKeyboardButton(text='🔙 Назад', callback_data='main_menu')],
 ])
+
+
+delete_button_user = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="❌ Удалить сообщение", callback_data='delete_button_user')]
+])

@@ -108,4 +108,11 @@ async def history_purchase(callback: CallbackQuery):
             f"————————————\n"
         )
 
-    await callback.message.answer(history_message, parse_mode="HTML")
+    await callback.message.answer(history_message, parse_mode="HTML", reply_markup=kb.delete_button_user)
+
+
+@user_router.callback_query(F.data == "delete_button_user")
+async def delete_history_message(callback: CallbackQuery):
+    await callback.answer()
+
+    await callback.message.delete()

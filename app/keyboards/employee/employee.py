@@ -27,12 +27,13 @@ new_transaction = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(text='💸 Списание', callback_data='transaction:remove')
     ],
     [
-        InlineKeyboardButton(text='❌ Отмена', callback_data='action:cancel')
+        InlineKeyboardButton(text='❌ Отмена', callback_data='transaction:cancel')
     ]
 ])
 
 # Клавиатура для подтверждения транзакции
 confirm_transaction = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='✅ Подтвердить списание', callback_data='confirm:yes')],
-    [InlineKeyboardButton(text='💳 Копить баллы', callback_data='confirm:no')]
+    [InlineKeyboardButton(text='💳 Копить баллы', callback_data='confirm:no')],
+    [InlineKeyboardButton(text='❌ Отмена', callback_data='confirm:cancel')]
 ])

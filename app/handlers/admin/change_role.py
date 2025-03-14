@@ -12,7 +12,7 @@ class Personal(StatesGroup):
     action = State()
     waiting_for_user_id = State()
 
-@admin_router.callback_query(F.data.startswith('action:'))
+@admin_router.callback_query(F.data.startswith('action_admin:'))
 async def change_setting(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
@@ -47,13 +47,27 @@ async def change_setting(callback: CallbackQuery, state: FSMContext):
 
     await state.update_data(action=action, role=role)
 
-    await callback.message.answer("✏️ Введите ID пользователя:")
+    await callback.message.answer("✏️ Введите ID пользователя:\n\n"
+                                  "💡 <i>Для отмены напишите слово '<code>отмена</code>'</i>",
+                                  parse_mode='HTML')
     await state.set_state(Personal.waiting_for_user_id)
 
 
 @admin_router.message(Personal.waiting_for_user_id)
 async def handle_user_id_input(message: Message, state: FSMContext):
     user_input = message.text.strip()
+
+    if 'отмена' in user_input:
+        await state.clear()
+
+        await message.answer(
+            "❌ <b>Операция успешна отменена</b>",
+            parse_mode='HTML'
+        )
+
+        await cmd_job(message)
+
+        return
 
     data = await state.get_data()
     role = "Администратор" if data.get("role") == "admin" else "Работник"
