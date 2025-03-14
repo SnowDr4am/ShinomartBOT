@@ -1,6 +1,7 @@
 from aiogram import F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.context import FSMContext
 from app.handlers.main import admin_router
 import app.keyboards.admin.admin as kb
 import app.database.admin_requests as rq
@@ -99,11 +100,50 @@ async def interact_with_users_bonus(callback: CallbackQuery):
 
 
 @admin_router.callback_query(F.data.startswith("bonus_users:"))
-async def employee_list(callback: CallbackQuery):
+async def employee_list(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
     _, balance = callback.data.split(":")
+    balance = float(balance)
 
+    users_dict = await rq.get_users_by_balance(balance)
+
+    await state.update_data(users_dict=users_dict)
+
+    keyboard = await kb.create_users_keyboard(users_dict, page=1)
+
+    await callback.message.answer(
+        "Отображаю список пользователей",
+        reply_markup=keyboard
+    )
+
+
+@admin_router.callback_query(F.data.startswith("bonus_user:"))
+async def view_user_profile(callback: CallbackQuery):
+    await callback.answer()
+
+    _, user_id = callback.data.split(":")
+
+    print(f"Выбран пользователь с user_id: {user_id}")
+
+
+@admin_router.callback_query(F.data.startswith("page:"))
+async def handle_pagination(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+
+    page = int(callback.data.split(":")[1])
+
+    data = await state.get_data()
+    users_dict = data.get("users_dict", {})
+
+    keyboard = await kb.create_users_keyboard(users_dict, page=page)
+
+    await callback.message.edit_reply_markup(reply_markup=keyboard)
+
+
+@admin_router.callback_query(F.data == "none")
+async def handle_none(callback: CallbackQuery):
+    await callback.answer()
 
 
 @admin_router.callback_query(F.data == "employees")

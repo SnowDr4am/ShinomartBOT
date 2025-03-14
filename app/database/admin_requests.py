@@ -1,6 +1,7 @@
 from app.database.models import async_session
 from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, RoleHistory
 from sqlalchemy import select, func, distinct, update
+from sqlalchemy.orm import selectinload
 from datetime import datetime, timedelta
 
 async def get_statistics(period: str = "all"):
@@ -204,5 +205,26 @@ async def get_worker_statistics(worker_id, period: str = "all"):
         }
 
 
-async def get_users_with_bonus(balance):
+async def get_users_by_balance(balance_input):
     async with async_session() as session:
+        if balance_input == 1000:
+            balance_filter = UserBonusBalance.balance.between(1000, 5000)
+        elif balance_input == 5000:
+            balance_filter = UserBonusBalance.balance.between(5001, 10000)
+        elif balance_input == 10000:
+            balance_filter = UserBonusBalance.balance > 10000
+        else:
+            return {}
+
+        query = select(User).join(UserBonusBalance).where(balance_filter).options(selectinload(User.bonus_balance))
+        result = await session.execute(query)
+        users = result.scalars().all()
+
+        users_dict = {}
+        for user in users:
+            users_dict[user.user_id] = {
+                'name': user.name,
+                'bonus-balance': user.bonus_balance.balance
+            }
+
+        return users_dict

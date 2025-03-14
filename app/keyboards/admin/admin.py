@@ -34,8 +34,8 @@ users_balance = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="Пользователи 5001-10000", callback_data='bonus_users:5000')],
     [InlineKeyboardButton(text="Пользователи 10000+", callback_data='bonus_users:10000')],
     [
-        [InlineKeyboardButton(text="Забрать бонусы", callback_data='bonus:add')],
-        [InlineKeyboardButton(text="Начислить бонусы", callback_data='bonus:remove')]
+        InlineKeyboardButton(text="Забрать бонусы", callback_data='bonus:add'),
+        InlineKeyboardButton(text="Начислить бонусы", callback_data='bonus:remove')
     ],
     [InlineKeyboardButton(text="🔙 Назад", callback_data='back_to_main')]
 ])
@@ -89,3 +89,48 @@ async def employee_stats(user_id):
         [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_main")],
     ])
     return worker_profile
+
+# Клавиатура для отображения списка пользователей с балансом
+async def create_users_keyboard(users_dict: dict, page: int = 1, users_per_page: int = 10) -> InlineKeyboardMarkup:
+    """
+    Создает inline-клавиатуру с пользователями и пагинацией.
+
+    :param users_dict: Словарь с пользователями.
+    :param page: Текущая страница.
+    :param users_per_page: Количество пользователей на одной странице.
+    :return: InlineKeyboardMarkup.
+    """
+    # Создаем список рядов кнопок
+    keyboard = []
+
+    # Преобразуем словарь в список для удобства пагинации
+    users_list = list(users_dict.items())
+    total_users = len(users_list)
+    total_pages = (total_users + users_per_page - 1) // users_per_page
+
+    # Определяем диапазон пользователей для текущей страницы
+    start = (page - 1) * users_per_page
+    end = start + users_per_page
+    users_on_page = users_list[start:end]
+
+    # Добавляем кнопки с пользователями
+    for user_id, user_data in users_on_page:
+        name = user_data["name"]
+        bonus_balance = user_data["bonus-balance"]
+        button_text = f"{name} {bonus_balance}"
+        # Каждый пользователь - отдельный ряд с одной кнопкой
+        keyboard.append([InlineKeyboardButton(text=button_text, callback_data=f"bonus_user:{user_id}")])
+
+    # Добавляем кнопки пагинации, если нужно
+    if total_pages > 1:
+        pagination_buttons = []
+        if page > 1:
+            pagination_buttons.append(InlineKeyboardButton(text="<-", callback_data=f"page:{page - 1}"))
+        pagination_buttons.append(InlineKeyboardButton(text=f"{page}/{total_pages}", callback_data="none"))
+        if page < total_pages:
+            pagination_buttons.append(InlineKeyboardButton(text="->", callback_data=f"page:{page + 1}"))
+        # Добавляем пагинацию как отдельный ряд
+        keyboard.append(pagination_buttons)
+
+    # Создаем объект InlineKeyboardMarkup с подготовленным списком кнопок
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
