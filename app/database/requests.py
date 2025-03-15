@@ -9,9 +9,8 @@ from app.servers.config import ADMIN_ID
 async def set_user(user_id, date_today, name, mobile_phone, birthday):
     async with async_session() as session:
         user = await session.scalar(select(User).where(User.user_id == user_id))
-
         if not user:
-            role = 'Администратор' if user_id in ADMIN_ID else 'Пользователь'
+            role = 'Администратор' if str(user_id) in ADMIN_ID else 'Пользователь'
 
             new_user = User(
                 user_id=user_id,
