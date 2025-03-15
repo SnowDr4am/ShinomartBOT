@@ -85,7 +85,8 @@ async def history_purchase(callback: CallbackQuery):
     transactions = await rq.get_last_10_transactions(user_id)
 
     if not transactions:
-        await callback.message.answer("🛒 История покупок пуста. \nВаши покупки появятся здесь, как только вы сделаете заказ! 😊")
+        await callback.message.answer("🛒 История покупок пуста. \nВаши покупки появятся здесь, как только вы сделаете заказ! 😊",
+                                      reply_markup=kb.delete_button_user)
         return
 
     history_message = "📊 <b>История последних 10 покупок/списаний:</b>\n\n"

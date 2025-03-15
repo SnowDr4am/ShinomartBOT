@@ -226,6 +226,7 @@ async def handle_amount_input(message: Message, state: FSMContext):
         amount_bonus = amount * cashback
         success = await rq.set_bonus_balance(user_data.user_id, "add", amount_bonus, amount, message.from_user.id)
         if success:
+            await state.clear()
             await message.answer(
                 f"🎉 <b>Начислено {amount_bonus:.2f} бонусов</b> пользователю {user_data.name} 🎁",
                 parse_mode='HTML',
@@ -305,6 +306,7 @@ async def confirm_deduction(callback: CallbackQuery, state: FSMContext):
                 ),
                 parse_mode='HTML'
             )
+            await state.clear()
 
             await callback_employee(callback)
         else:
@@ -329,6 +331,7 @@ async def confirm_deduction(callback: CallbackQuery, state: FSMContext):
                 ),
                 parse_mode='HTML'
             )
+            await state.clear()
 
             await callback_employee(callback)
         else:
