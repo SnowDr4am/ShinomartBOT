@@ -5,6 +5,7 @@ import app.database.admin_requests as rq
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from app.handlers.admin.admin import back_to_main, cmd_job
+from app.servers.config import OWNER
 
 
 class Personal(StatesGroup):
@@ -19,7 +20,7 @@ async def change_setting(callback: CallbackQuery, state: FSMContext):
     _, role, action = callback.data.split(":")
 
     if action == "remove":
-        if role == '728303180':
+        if role == OWNER:
             await callback.message.answer(
                 "🚫 Действие запрещено!\n"
                 "Вы не можете взаимодействовать с этим пользователем."
