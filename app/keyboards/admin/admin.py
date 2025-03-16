@@ -82,6 +82,9 @@ async def employee_stats(user_id):
             InlineKeyboardButton(text="📊 Статистика за всё время", callback_data=f"employee_profile:{user_id}:all"),
         ],
         [
+            InlineKeyboardButton(text="📝 Посмотреть отзывы", callback_data=f"worker_reviews:{user_id}"),
+        ],
+        [
             InlineKeyboardButton(text="❌ Снять роль с пользователя", callback_data=f"action_admin:{user_id}:remove")
         ],
         [InlineKeyboardButton(text="🔙 Назад", callback_data="employees")],

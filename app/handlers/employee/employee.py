@@ -239,6 +239,7 @@ async def handle_amount_input(message: Message, state: FSMContext):
                     f"💰 За покупку на сумму <b>{amount} руб.</b>\n\n"
                     "🔥 Эти бонусы можно использовать для будущих покупок.\n"
                 ),
+                reply_markup=kb.assessment,
                 parse_mode='HTML'
             )
         else:
@@ -304,6 +305,7 @@ async def confirm_deduction(callback: CallbackQuery, state: FSMContext):
                     f"💰 За покупку на сумму <b>{amount} руб.</b>\n\n"
                     "🔥 Эти бонусы можно использовать для будущих покупок.\n"
                 ),
+                reply_markup=kb.assessment,
                 parse_mode='HTML'
             )
             await state.clear()
@@ -329,6 +331,7 @@ async def confirm_deduction(callback: CallbackQuery, state: FSMContext):
                     f"💳 За покупку на сумму <b>{amount} руб.</b>\n\n"
                     "🛍️ Благодарим вас за использование нашей системы лояльности!"
                 ),
+                reply_markup=kb.assessment,
                 parse_mode='HTML'
             )
             await state.clear()

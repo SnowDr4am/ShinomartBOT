@@ -6,8 +6,8 @@ from app.database.models import async_main
 from app.handlers.main import setup_middleware, user_router, admin_router, employee_router
 from app.scheduler.tasks import setup_scheduler, send_monthly_report
 
-from app.handlers.user import user, registration
-from app.handlers.admin import admin, bonus_system, change_role
+from app.handlers.user import user, registration, employee_assessment
+from app.handlers.admin import admin, bonus_system, personal
 from app.handlers.employee import employee
 
 async def main():

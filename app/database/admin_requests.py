@@ -1,5 +1,5 @@
 from app.database.models import async_session
-from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, RoleHistory
+from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, RoleHistory, Review
 from sqlalchemy import select, func, distinct, update
 from sqlalchemy.orm import selectinload
 from datetime import datetime, timedelta
@@ -152,7 +152,7 @@ async def get_worker_statistics(worker_id, period: str = "all"):
         worker = (await session.execute(worker_query)).scalar()
 
         if not worker:
-            return None  # Если работник не найден, возвращаем None
+            return None
 
         # Получаем дату последней выдачи роли
         role_query = (
@@ -163,35 +163,39 @@ async def get_worker_statistics(worker_id, period: str = "all"):
         )
         role_assigned_date = (await session.execute(role_query)).scalar() or "Неизвестно"
 
-        # Подсчёт количества транзакций, совершённых работником
+        # Подсчёт количества транзакций
         total_transactions_query = select(func.count(PurchaseHistory.id)).where(
             PurchaseHistory.worker_id == worker_id,
             period_filter
         )
         total_transactions = (await session.execute(total_transactions_query)).scalar() or 0
 
-        # Подсчёт общей суммы всех операций (Пополнения + Списания)
+        # Подсчёт общей суммы всех операций
         total_amount_query = select(func.sum(PurchaseHistory.amount)).where(
             PurchaseHistory.worker_id == worker_id,
             period_filter
         )
         total_amount = (await session.execute(total_amount_query)).scalar() or 0.0
 
-        # Подсчёт суммы пополнений
-        total_add_query = select(func.sum(PurchaseHistory.amount)).where(
+        # Подсчёт суммы зачисления бонусов
+        total_add_query = select(func.sum(PurchaseHistory.bonus_amount)).where(
             PurchaseHistory.worker_id == worker_id,
             PurchaseHistory.transaction_type == "Пополнение",
             period_filter
         )
         total_add = (await session.execute(total_add_query)).scalar() or 0.0
 
-        # Подсчёт суммы списаний
-        total_remove_query = select(func.sum(PurchaseHistory.amount)).where(
+        # Подсчёт суммы списания бонусов
+        total_remove_query = select(func.sum(PurchaseHistory.bonus_amount)).where(
             PurchaseHistory.worker_id == worker_id,
             PurchaseHistory.transaction_type == "Списание",
             period_filter
         )
         total_remove = (await session.execute(total_remove_query)).scalar() or 0.0
+
+        # Подсчёт количества оценок
+        total_ratings_query = select(func.count(Review.id)).where(Review.worker_id == worker_id)
+        total_ratings = (await session.execute(total_ratings_query)).scalar() or 0
 
         return {
             "name": worker.name,
@@ -201,6 +205,7 @@ async def get_worker_statistics(worker_id, period: str = "all"):
             "total_amount": total_amount,
             "total_add": total_add,
             "total_remove": total_remove,
+            "total_ratings": total_ratings,
             "period_label": period_label,
         }
 
@@ -228,3 +233,38 @@ async def get_users_by_balance(balance_input):
             }
 
         return users_dict
+
+
+async def get_worker_average_rating(worker_id: str) -> float | None:
+    async with async_session() as session:
+        query = select(func.avg(Review.rating)).where(Review.worker_id == worker_id)
+        result = await session.execute(query)
+        avg_rating = result.scalar()
+        return round(avg_rating, 2) if avg_rating else None
+
+
+async def get_worker_reviews(worker_id: str) -> list[dict]:
+    async with async_session() as session:
+        start_date = datetime.now() - timedelta(days=30)
+        query = (
+            select(Review, User.name, PurchaseHistory.amount, PurchaseHistory.transaction_type)
+            .join(User, Review.user_id == User.user_id)
+            .join(PurchaseHistory, Review.purchase_id == PurchaseHistory.id)
+            .where(Review.worker_id == worker_id, Review.review_date >= start_date)
+            .order_by(Review.review_date.desc())
+        )
+        result = await session.execute(query)
+        reviews = result.all()
+
+        return [
+            {
+                "user_id": review.user_id,
+                "name": name,
+                "review_date": review.review_date,
+                "amount": amount,
+                "transaction_type": transaction_type,
+                "rating": review.rating,
+                "comment": review.comment or "Без комментария"
+            }
+            for review, name, amount, transaction_type in reviews
+        ]

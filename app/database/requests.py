@@ -1,7 +1,7 @@
 from sqlalchemy import select, desc, func, case
 from datetime import datetime
 from app.database.models import async_session
-from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem
+from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, Review
 from sqlalchemy.orm import joinedload
 from app.servers.config import ADMIN_ID
 
@@ -223,3 +223,38 @@ async def get_monthly_report(year: int, month: int) -> dict:
             "bonuses_added": row.bonuses_added or 0.0,
             "bonuses_spent": row.bonuses_spent or 0.0
         }
+
+
+async def get_last_transaction(user_id: str) -> PurchaseHistory | None:
+    async with async_session() as session:
+        stmt = select(PurchaseHistory).where(PurchaseHistory.user_id == user_id).order_by(PurchaseHistory.transaction_date.desc()).limit(1)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
+
+
+async def check_review_exists(purchase_id: int) -> bool:
+    async with async_session() as session:
+        review_exists = await session.execute(
+            select(Review).where(Review.purchase_id == purchase_id)
+        )
+        return bool(review_exists.scalar_one_or_none())
+
+
+async def save_review(
+    user_id: str,
+    purchase_id: int,
+    worker_id: str,
+    rating: int,
+    comment: str | None
+) -> None:
+    async with async_session() as session:
+        review = Review(
+            user_id=user_id,
+            purchase_id=purchase_id,
+            worker_id=worker_id,
+            review_date=datetime.now(),
+            rating=rating,
+            comment=comment
+        )
+        session.add(review)
+        await session.commit()
