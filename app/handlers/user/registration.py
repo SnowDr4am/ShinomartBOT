@@ -14,7 +14,6 @@ import app.database.requests as rq
 class GetUserInfo(StatesGroup):
     name = State()
     mobile_phone = State()
-    birthday = State()
 
 
 @user_router.callback_query(F.data == 'registration')
@@ -23,8 +22,7 @@ async def registration(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
         "📝 <b>Для регистрации мне необходимо собрать о Вас следующую информацию:</b>\n"
         "— 👤 <b>Ваше имя</b>\n"
-        "— 📞 <b>Ваш номер телефона</b>\n"
-        "— 🎂 <b>Дату рождения</b>\n\n",
+        "— 📞 <b>Ваш номер телефона</b>\n",
         parse_mode="HTML"
     )
     await callback.message.answer(
@@ -91,61 +89,15 @@ async def get_mobile_phone(message: Message, state: FSMContext):
 
         await state.update_data(mobile_phone=cleaned_number)
 
-        await state.set_state(GetUserInfo.birthday)
-        await message.answer(
-            "📅 <b>Напишите вашу дату рождения</b>\n"
-            "Пример: <code>26.02.2025</code>",
-            parse_mode='HTML',
-            reply_markup=ReplyKeyboardRemove()
-        )
-
-    except Exception as e:
-        print(f"Ошибка: {e}")
-        await message.answer(
-            "⚠️ <b>Произошла ошибка при обработке номера телефона.</b> Попробуйте ещё раз",
-            parse_mode='HTML'
-        )
-
-
-@user_router.message(GetUserInfo.birthday)
-async def get_birthday_date(message: Message, state: FSMContext):
-    user_input = message.text.strip()
-
-    try:
-        cleaned_input = re.sub(r'[^0-9\.\-/]', '', user_input)
-
-        date_formats = [
-            "%Y.%m.%d", "%Y-%m-%d", "%d-%m-%Y", "%d.%m.%Y"
-        ]
-
-        parsed_date = None
-        for date_format in date_formats:
-            try:
-                parsed_date = datetime.strptime(cleaned_input, date_format)
-                break
-            except ValueError:
-                continue
-
-        if not parsed_date:
-            await message.answer("❌ <b>Некорректный формат даты.</b> Используйте ДД.ММ.ГГГГ.", parse_mode='HTML')
-            return
-
-        formatted_date = parsed_date.strftime("%d.%m.%Y")
-
-        await state.update_data(birthday=formatted_date)
-
         data = await state.get_data()
         name = data.get("name")
         number = data.get("mobile_phone")
 
-        birthday_date_obj = parsed_date.date()
-
-        if await rq.set_user(message.from_user.id, datetime.now(), name, number, birthday_date_obj):
+        if await rq.set_user(message.from_user.id, datetime.now(), name, number, datetime.now()):
             await message.answer(
                 f"✅ <b>Регистрация завершена.</b>\n"
                 f"👤 <b>Имя:</b> {name}\n"
-                f"📞 <b>Телефон:</b> {number}\n"
-                f"🎂 <b>Дата рождения:</b> {formatted_date}",
+                f"📞 <b>Телефон:</b> {number}\n",
                 parse_mode='HTML'
             )
 
@@ -154,6 +106,10 @@ async def get_birthday_date(message: Message, state: FSMContext):
             await cmd_start(message)
         else:
             await message.answer("🚨 <b>Внутренняя ошибка.</b> Попробуйте позже.", parse_mode='HTML')
+
     except Exception as e:
-        await message.answer("⚠️ <b>Ошибка обработки даты.</b> Попробуйте ещё раз.", parse_mode='HTML')
         print(f"Ошибка: {e}")
+        await message.answer(
+            "⚠️ <b>Произошла ошибка при обработке номера телефона.</b> Попробуйте ещё раз",
+            parse_mode='HTML'
+        )

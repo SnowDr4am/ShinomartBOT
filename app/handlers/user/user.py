@@ -54,7 +54,6 @@ async def profile(callback: CallbackQuery):
 
     if profile_data:
         registration_date = profile_data['registration_date'].replace("-", ".")
-        birthday_date = profile_data['birthday_date'].replace("-", ".")
 
         profile_message = (
             f"<b>👤 Личный кабинет пользователя</b>\n"
@@ -63,7 +62,6 @@ async def profile(callback: CallbackQuery):
             f"<b>👋 Имя:</b> {profile_data['name']}\n\n"
             f"<b>📅 Дата регистрации:</b> {registration_date}\n\n"
             f"<b>📞 Номер телефона:</b> {profile_data['mobile_phone']}\n\n"
-            f"<b>🎂 Дата рождения:</b> {birthday_date}\n\n"
             f"<b>💰 Бонусный баланс:</b> {profile_data['bonus_balance']} бонусов\n\n"
             f"<b>——————</b>\n\n"
             "<i>Если данные неверные или нужно обновить информацию, свяжитесь с поддержкой</i>"

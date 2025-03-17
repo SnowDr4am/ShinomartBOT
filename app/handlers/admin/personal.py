@@ -86,7 +86,7 @@ async def view_worker_reviews(callback: CallbackQuery):
     reviews = await rq.get_worker_reviews(worker_id)
 
     if not reviews:
-        await callback.message.answer("Отзывов за последние 30 дней нет.")
+        await callback.message.answer("Отзывов за последние 30 дней нет.", reply_markup=kb.delete_button_admin)
         return
 
     text = "<b>📝 Отзывы за последние 30 дней</b>\n\n"

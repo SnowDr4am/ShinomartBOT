@@ -117,7 +117,6 @@ async def view_user_profile(callback: CallbackQuery):
     profile_user_data = await common_rq.get_user_profile(user_id)
 
     registration_date = profile_user_data['registration_date'].replace("-", ".")
-    birthday_date = profile_user_data['birthday_date'].replace("-", ".")
 
     keyboard = await kb.get_user_profile_admin(user_id)
 
@@ -128,7 +127,6 @@ async def view_user_profile(callback: CallbackQuery):
         f"<b>👋 Имя:</b> {profile_user_data['name']}\n\n"
         f"<b>📅 Дата регистрации:</b> {registration_date}\n\n"
         f"<b>📞 Номер телефона:</b> {profile_user_data['mobile_phone']}\n\n"
-        f"<b>🎂 Дата рождения:</b> {birthday_date}\n\n"
         f"<b>💰 Бонусный баланс:</b> {profile_user_data['bonus_balance']} бонусов\n\n",
         reply_markup=keyboard,
         parse_mode='HTML'

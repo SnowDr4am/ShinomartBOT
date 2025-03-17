@@ -39,5 +39,5 @@ confirm_transaction = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 assessment = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Поставить оценку работнику', callback_data='start_assessment')]
+    [InlineKeyboardButton(text='⭐ Поставить оценку работнику ⭐', callback_data='start_assessment')]
 ])

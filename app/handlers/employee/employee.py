@@ -124,7 +124,6 @@ async def handle_phone_selection(callback: CallbackQuery, state: FSMContext):
             "📋 <b>Профиль пользователя:</b>\n\n"
             f"👤 <b>Имя:</b> {user_data.name}\n"
             f"📞 <b>Номер телефона:</b> {user_data.mobile_phone}\n"
-            f"🎂 <b>Дата рождения:</b> {user_data.birthday_date}\n"
             f"💰 <b>Бонусный баланс:</b> {user_data.bonus_balance.balance} бонусов\n\n"
             "🔍 <i>Пожалуйста, выберите действие ниже.</i>"
         )
@@ -235,9 +234,9 @@ async def handle_amount_input(message: Message, state: FSMContext):
             await message.bot.send_message(
                 chat_id=user_data.user_id,
                 text=(
-                    f"<b>🎉 Вам начислено {amount_bonus:.2f} бонусов!</b>\n\n"
+                    f"<b>🎉 Вам начислено {amount_bonus:.2f} бонусов!</b>\n"
                     f"💰 За покупку на сумму <b>{amount} руб.</b>\n\n"
-                    "🔥 Эти бонусы можно использовать для будущих покупок.\n"
+                    f"👇 <b>Оцените работу нашего сотрудника прямо сейчас!</b> 👇"
                 ),
                 reply_markup=kb.assessment,
                 parse_mode='HTML'
@@ -301,9 +300,9 @@ async def confirm_deduction(callback: CallbackQuery, state: FSMContext):
             await callback.bot.send_message(
                 chat_id=user_data.user_id,
                 text=(
-                    f"<b>🎉 Вам начислено {amount_bonus:.2f} бонусов!</b>\n\n"
+                    f"<b>🎉 Вам начислено {amount_bonus:.2f} бонусов!</b>\n"
                     f"💰 За покупку на сумму <b>{amount} руб.</b>\n\n"
-                    "🔥 Эти бонусы можно использовать для будущих покупок.\n"
+                    f"👇 <b>Оцените работу нашего сотрудника прямо сейчас!</b> 👇"
                 ),
                 reply_markup=kb.assessment,
                 parse_mode='HTML'
@@ -327,9 +326,9 @@ async def confirm_deduction(callback: CallbackQuery, state: FSMContext):
             await callback.bot.send_message(
                 chat_id=user_data.user_id,
                 text=(
-                    f"<b>❌ У вас списано {bonus_deduction:.2f} бонусов!</b>\n\n"
+                    f"<b>❌ У вас списано {bonus_deduction:.2f} бонусов!</b>\n"
                     f"💳 За покупку на сумму <b>{amount} руб.</b>\n\n"
-                    "🛍️ Благодарим вас за использование нашей системы лояльности!"
+                    f"👇 <b>Оцените работу нашего сотрудника прямо сейчас!</b> 👇"
                 ),
                 reply_markup=kb.assessment,
                 parse_mode='HTML'
