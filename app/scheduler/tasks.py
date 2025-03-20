@@ -77,8 +77,8 @@ async def notify_upcoming_appointments(bot: Bot):
 
 async def setup_scheduler(bot: Bot):
     scheduler = AsyncIOScheduler(timezone=EKATERINBURG_TZ)
-    scheduler.add_job(send_daily_appointments, trigger=CronTrigger(hour=8, minute=0), args=[bot], max_instances=1)
-    scheduler.add_job(notify_upcoming_appointments, trigger=CronTrigger(hour="8-19", minute=0), args=[bot], max_instances=1)
+    scheduler.add_job(send_daily_appointments, trigger=CronTrigger(hour=7, minute=0), args=[bot], max_instances=1)
+    scheduler.add_job(notify_upcoming_appointments, trigger=CronTrigger(hour="7-19", minute=0), args=[bot], max_instances=1)
     scheduler.add_job(send_monthly_report, trigger=CronTrigger(day="last", hour=18, minute=0), args=[bot], max_instances=1)
     scheduler.start()
 
