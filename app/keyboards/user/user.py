@@ -1,5 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 
+
 # Клавиатура для регистрации
 registration = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='📝 Начать регистрацию', callback_data='registration')]
@@ -16,6 +17,7 @@ get_phone_number = ReplyKeyboardMarkup(
 # Главное меню
 main_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='👤 Профиль', callback_data='profile')],
+    [InlineKeyboardButton(text='⚙️ Записаться в сервис', callback_data='entry_server')],
     [InlineKeyboardButton(text='💬 Связаться с нами', callback_data='contact')]
 ])
 
@@ -50,3 +52,14 @@ comment_choice = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(text="Нет", callback_data="comment_no"),
     ]
 ])
+
+cancel_appointment_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="❌ Отменить запись", callback_data="appointment_delete")]
+])
+
+async def get_approved_appointment_keyboard(user_id):
+    approved_appointment = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="✅ Да", callback_data=f"approved:{user_id}:yes")],
+                [InlineKeyboardButton(text="❌ Отменить запись", callback_data=f"approved:{user_id}:remove")]
+            ])
+    return approved_appointment

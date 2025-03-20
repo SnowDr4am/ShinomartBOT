@@ -4,6 +4,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardBu
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text='💳 Новая транзакция')],
+        [KeyboardButton(text='🗑️ Отменить запись')],
         [KeyboardButton(text='❌ Отмена')]
     ],
     resize_keyboard=True
@@ -19,6 +20,38 @@ async def generate_phone_numbers_keyboard(phone_numbers: list[str]) -> InlineKey
     keyboard.append([cancel_button])
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+# Генерация клавиатуры с номерами телефонов для удаления записи
+async def generate_phone_numbers_appointment(phone_numbers: list[str]) -> InlineKeyboardMarkup:
+    if not phone_numbers or not isinstance(phone_numbers, list):
+        return InlineKeyboardMarkup(inline_keyboard=[])
+
+    keyboard = []
+    for phone in phone_numbers:
+        button = InlineKeyboardButton(text=f"📞 {phone}", callback_data=f"appointment_phone:{phone}")
+        keyboard.append([button])
+    cancel_button = InlineKeyboardButton(text="❌ Отмена", callback_data="cancel")
+    keyboard.append([cancel_button])
+
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+async def approved_remove_appointment_keyboard(user_id: str) -> InlineKeyboardMarkup:
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="🗑️ Отменить запись",
+                callback_data=f"remove_appointment_approved:{user_id}"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="↩️ Назад",
+                callback_data="cancel"
+            )
+        ]
+    ])
+    return keyboard
 
 # Клавиатура для нового транзакции
 new_transaction = InlineKeyboardMarkup(inline_keyboard=[

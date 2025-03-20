@@ -6,6 +6,7 @@ from app.handlers.main import user_router
 from app.servers.config import PHONE_NUMBER
 import app.keyboards.user.user as kb
 import app.database.requests as rq
+import app.database.ai_requests as ai_rq
 
 
 @user_router.message(CommandStart())
@@ -55,6 +56,18 @@ async def profile(callback: CallbackQuery):
     if profile_data:
         registration_date = profile_data['registration_date'].replace("-", ".")
 
+        appointment = await ai_rq.get_active_appointment(str(user_id))
+        if appointment:
+            appointment_info = (
+                f"⏰ <b>Время записи:</b> {appointment.date_time.strftime('%H:%M %d.%m.%Y')}\n"
+                f"🛠️ <b>Услуга:</b> {appointment.service.split('. Тип машины')[0] if '. Тип машины' in appointment.service else appointment.service}"
+            )
+        else:
+            appointment_info = (
+                "ℹ️ Вы ещё не записаны к нам.\n"
+                "👉 <b>Вы можете это сделать через меню:</b> /start → Записаться в сервис"
+            )
+
         profile_message = (
             f"<b>👤 Личный кабинет пользователя</b>\n"
             f"<b>——————</b>\n\n"
@@ -63,6 +76,8 @@ async def profile(callback: CallbackQuery):
             f"<b>📅 Дата регистрации:</b> {registration_date}\n\n"
             f"<b>📞 Номер телефона:</b> {profile_data['mobile_phone']}\n\n"
             f"<b>💰 Бонусный баланс:</b> {profile_data['bonus_balance']} бонусов\n\n"
+            f"<b>📋 Запись в сервис:</b>\n"
+            f"{appointment_info}\n\n"
             f"<b>——————</b>\n\n"
             "<i>Если данные неверные или нужно обновить информацию, свяжитесь с поддержкой</i>"
         )

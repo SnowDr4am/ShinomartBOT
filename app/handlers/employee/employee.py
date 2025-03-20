@@ -3,7 +3,6 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import StatesGroup, State
-from sqlalchemy.util import await_only
 
 from app.handlers.main import employee_router
 import app.keyboards.employee.employee as kb

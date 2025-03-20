@@ -1,10 +1,12 @@
 from sqlalchemy import select, desc, func, case
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz
 from app.database.models import async_session
-from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, Review
+from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, Review, Appointment, Settings
 from sqlalchemy.orm import joinedload
 from app.servers.config import ADMIN_ID
 
+EKATERINBURG_TZ = pytz.timezone('Asia/Yekaterinburg')
 
 async def set_user(user_id, date_today, name, mobile_phone, birthday):
     async with async_session() as session:
@@ -258,3 +260,103 @@ async def save_review(
         )
         session.add(review)
         await session.commit()
+
+
+async def get_appointments_for_today() -> list[Appointment]:
+    """Возвращает все записи на текущий день, отсортированные по времени."""
+    async with async_session() as session:
+        today = datetime.now(EKATERINBURG_TZ).replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow = today + timedelta(days=1)
+
+        stmt = select(Appointment).where(
+            Appointment.date_time.between(today, tomorrow - timedelta(seconds=1))
+        ).order_by(Appointment.date_time)
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
+
+async def get_upcoming_appointments_for_notification(current_time: datetime) -> list[Appointment]:
+    """Возвращает неподтверждённые записи в диапазоне текущего времени + 3 часа, которым не отправлено уведомление."""
+    async with async_session() as session:
+        start_time = current_time
+        end_time = current_time + timedelta(hours=3)
+
+        stmt = select(Appointment).where(
+            (Appointment.date_time.between(start_time, end_time)) &
+            (Appointment.is_confirmed == False) &
+            (Appointment.is_notified == False)
+        ).order_by(Appointment.date_time)
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
+
+async def confirm_appointment(user_id: str) -> bool:
+    """Подтверждает запись пользователя."""
+    async with async_session() as session:
+        stmt = select(Appointment).where(Appointment.user_id == user_id)
+        result = await session.execute(stmt)
+        appointment = result.scalars().first()
+
+        if appointment:
+            appointment.is_confirmed = True
+            await session.commit()
+            return True
+        return False
+
+
+async def delete_appointment(user_id: str) -> bool:
+    """Удаляет запись пользователя."""
+    async with async_session() as session:
+        stmt = select(Appointment).where(Appointment.user_id == user_id)
+        result = await session.execute(stmt)
+        appointment = result.scalars().first()
+
+        if appointment:
+            await session.delete(appointment)
+            await session.commit()
+            return True
+        return False
+
+
+async def set_notified(user_id: str) -> bool:
+    """Отмечает, что пользователю отправлено уведомление."""
+    async with async_session() as session:
+        stmt = select(Appointment).where(Appointment.user_id == user_id)
+        result = await session.execute(stmt)
+        appointment = result.scalars().first()
+
+        if appointment:
+            appointment.is_notified = True
+            await session.commit()
+            return True
+        return False
+
+
+async def get_daily_message_id() -> int | None:
+    """Получает ID сообщения из таблицы Settings."""
+    async with async_session() as session:
+        stmt = select(Settings).where(Settings.id == 1)
+        result = await session.execute(stmt)
+        settings = result.scalars().first()
+        return settings.daily_message_id if settings else None
+
+
+async def set_daily_message_id(message_id: int) -> bool:
+    """Обновляет или создаёт запись с ID сообщения в таблице Settings."""
+    async with async_session() as session:
+        try:
+            stmt = select(Settings).where(Settings.id == 1)
+            result = await session.execute(stmt)
+            settings = result.scalars().first()
+
+            if settings:
+                settings.daily_message_id = message_id
+            else:
+                new_settings = Settings(id=1, daily_message_id=message_id)
+                session.add(new_settings)
+
+            await session.commit()
+            return True
+        except Exception as e:
+            await session.rollback()
+            return False

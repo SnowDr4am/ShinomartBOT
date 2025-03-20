@@ -1,4 +1,4 @@
-from sqlalchemy import Float, String, TIMESTAMP, Date, Integer, ForeignKey
+from sqlalchemy import Float, String, TIMESTAMP, Date, Integer, ForeignKey, Boolean
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 import datetime
@@ -23,7 +23,7 @@ class User(Base):
     purchase_history = relationship("PurchaseHistory", back_populates="user", lazy="dynamic")
     bonus_balance = relationship("UserBonusBalance", uselist=False, back_populates="user")
     reviews = relationship("Review", back_populates="user", lazy="dynamic")
-
+    appointments = relationship("Appointment", back_populates="user", lazy="dynamic")
 class PurchaseHistory(Base):
     __tablename__ = 'purchase_history'
 
@@ -76,6 +76,24 @@ class Review(Base):
 
     user = relationship("User", back_populates="reviews")
     purchase = relationship("PurchaseHistory", back_populates="reviews")
+
+class Appointment(Base):
+    __tablename__ = 'appointments'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.user_id'), nullable=False)  # Связь с users.user_id
+    mobile_phone: Mapped[str] = mapped_column(String, nullable=False)  # Телефон пользователя
+    date_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, nullable=False)  # Дата и время записи
+    service: Mapped[str] = mapped_column(String, nullable=False)  # Название услуги
+    is_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)  # Статус подтверждения
+    is_notified: Mapped[bool] = mapped_column(Boolean, default=False)  # Статус уведомления
+
+    user = relationship("User", back_populates="appointments")  # Связь с моделью User
+
+class Settings(Base):
+    __tablename__ = 'settings'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    daily_message_id: Mapped[int] = mapped_column(Integer, nullable=True)
 
 async def async_main():
     async with engine.begin() as conn:
