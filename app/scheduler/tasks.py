@@ -17,12 +17,12 @@ async def send_monthly_report(bot: Bot):
                    7: "Июль", 8: "Август", 9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь"}
     report = (
         f"📅 <b>Отчёт за {month_names[month]} {year} года</b>\n\n"
-        f"👥 <b>Новых пользователей:</b> {report_data['new_users']}\n"
-        f"🛒 <b>Количество продаж:</b> {report_data['sales_count']}\n"
-        f"💸 <b>Сумма всех транзакций:</b> {report_data['sales_amount']:.2f} руб.\n"
-        f"🎁 <b>Начислено бонусов:</b> {report_data['bonuses_added']:.2f}\n"
-        f"🔥 <b>Списано бонусов:</b> {report_data['bonuses_spent']:.2f}\n\n"
-        f"✨ <i>Отчёт сформирован {now.strftime('%d.%m.%Y в %H:%M')}</i>\n"
+        f"👥 <b>Новых пользователей:</b> {report_data.get('new_users', 0)}\n"
+        f"🛒 <b>Количество продаж:</b> {report_data.get('sales_count', 0)}\n"
+        f"💸 <b>Сумма всех транзакций:</b> {report_data.get('sales_amount', 0):.2f} руб.\n"
+        f"🎁 <b>Начислено бонусов:</b> {report_data.get('bonuses_added', 0):.2f}\n"
+        f"🔥 <b>Списано бонусов:</b> {report_data.get('bonuses_spent', 0):.2f}\n\n"
+        f"✨ <i>Отчёт сформирован {now.strftime('%d.%m.%Y в %H:%M')}</i>"
     )
     try:
         await bot.send_message(chat_id=CHANNEL_ID_DAILY, text=report, parse_mode="HTML")
@@ -35,7 +35,10 @@ async def send_daily_appointments(bot: Bot) -> int | None:
     today = datetime.now(EKATERINBURG_TZ)
     appointments = await rq.get_appointments_for_today()
     if not appointments:
-        message = f"📅 <b>Запись в сервис на {today.strftime('%d.%m.%Y')} (сегодняшний день)</b>\n\nНа сегодняшний день пока нет записей"
+        message = (
+            f"📅 <b>Запись в сервис на {today.strftime('%d.%m.%Y')} (сегодняшний день)</b>\n\n"
+            "На сегодняшний день пока нет записей"
+        )
     else:
         message_lines = [f"📅 <b>Запись в сервис на {today.strftime('%d.%m.%Y')} (сегодняшний день)</b>\n"]
         for appt in appointments:
@@ -45,9 +48,9 @@ async def send_daily_appointments(bot: Bot) -> int | None:
             message_lines.append(
                 "—————————\n"
                 f"<b>Имя клиента:</b> {name}\n"
-                f"<b>Номер телефона:<b> <code>{appt.mobile_phone}</code>\n"
-                f"<b>Время записи:<b> {appt.date_time.strftime('%H:%M')}\n"
-                f"<b>Статус:<b> {status}\n"
+                f"<b>Номер телефона:</b> <code>{appt.mobile_phone}</code>\n"
+                f"<b>Время записи:</b> {appt.date_time.strftime('%H:%M')}\n"
+                f"<b>Статус:</b> {status}\n"
             )
         message = "\n".join(message_lines) + "—————————"
     try:
@@ -70,15 +73,15 @@ async def notify_upcoming_appointments(bot: Bot):
             "<b>Вы приедете?</b> 🤔"
         )
         try:
-            await bot.send_message(chat_id=appt.user_id, text=message, reply_markup=keyboard)
+            await bot.send_message(chat_id=appt.user_id, text=message, reply_markup=keyboard, parse_mode='HTML')
             await rq.set_notified(appt.user_id)
         except Exception as e:
             print(f"Ошибка отправки уведомления пользователю {appt.user_id}: {e}")
 
 async def setup_scheduler(bot: Bot):
     scheduler = AsyncIOScheduler(timezone=EKATERINBURG_TZ)
-    scheduler.add_job(send_daily_appointments, trigger=CronTrigger(hour=7, minute=0), args=[bot], max_instances=1)
-    scheduler.add_job(notify_upcoming_appointments, trigger=CronTrigger(hour="7-19", minute=0), args=[bot], max_instances=1)
+    scheduler.add_job(send_daily_appointments, trigger=CronTrigger(hour=8, minute=0), args=[bot], max_instances=1)
+    scheduler.add_job(notify_upcoming_appointments, trigger=CronTrigger(hour="7-19", minute=1), args=[bot], max_instances=1)
     scheduler.add_job(send_monthly_report, trigger=CronTrigger(day="last", hour=18, minute=0), args=[bot], max_instances=1)
     scheduler.start()
 
