@@ -138,7 +138,32 @@ async def handle_phone_selection(callback: CallbackQuery, state: FSMContext):
             "❌ <b>Профиль пользователя не найден</b>",
             parse_mode='HTML'
         )
+        return
 
+
+async def handle_phone_selection_by_qr(message, phone_number, state: FSMContext):
+    user_data = await rq.get_user_by_phone(phone_number)
+
+    if user_data:
+        user_info_message = (
+            "📋 <b>Профиль пользователя:</b>\n\n"
+            f"👤 <b>Имя:</b> {user_data.name}\n"
+            f"📞 <b>Номер телефона:</b> {user_data.mobile_phone}\n"
+            f"💰 <b>Бонусный баланс:</b> {user_data.bonus_balance.balance} бонусов\n\n"
+            "🔍 <i>Пожалуйста, выберите действие ниже.</i>"
+        )
+        await message.delete()
+        await message.answer(user_info_message, parse_mode='HTML', reply_markup=kb.new_transaction)
+
+        await state.update_data(phone_number=phone_number)
+        await state.update_data(bonus_balance=user_data.bonus_balance.balance)
+
+        await state.set_state(GetUser.select_action)
+    else:
+        await message.answer(
+            "❌ <b>Профиль пользователя не найден</b>",
+            parse_mode='HTML'
+        )
         return
 
 

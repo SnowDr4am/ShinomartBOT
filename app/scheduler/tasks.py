@@ -2,6 +2,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from aiogram import Bot
 import pytz
+from app.database.models import async_session, QRCode
+from sqlalchemy import delete
 import app.database.requests as rq
 import app.keyboards.user.user as kb
 from app.servers.config import CHANNEL_ID_DAILY
@@ -78,11 +80,21 @@ async def notify_upcoming_appointments(bot: Bot):
         except Exception as e:
             print(f"Ошибка отправки уведомления пользователю {appt.user_id}: {e}")
 
+async def clear_qr_codes():
+    async with async_session() as session:
+        try:
+            await session.execute(delete(QRCode))
+            await session.commit()
+        except Exception as e:
+            print(f"Ошибка при удалении QR-кодов: {e}")
+            await session.rollback()
+
 async def setup_scheduler(bot: Bot):
     scheduler = AsyncIOScheduler(timezone=EKATERINBURG_TZ)
-    scheduler.add_job(send_daily_appointments, trigger=CronTrigger(hour=8, minute=0), args=[bot], max_instances=1)
-    scheduler.add_job(notify_upcoming_appointments, trigger=CronTrigger(hour="7-19", minute=1), args=[bot], max_instances=1)
+    scheduler.add_job(send_daily_appointments, trigger=CronTrigger(hour=6, minute=0), args=[bot], max_instances=1)
+    scheduler.add_job(notify_upcoming_appointments, trigger=CronTrigger(hour="7-19", minute=0), args=[bot], max_instances=1)
     scheduler.add_job(send_monthly_report, trigger=CronTrigger(day="last", hour=18, minute=0), args=[bot], max_instances=1)
+    scheduler.add_job(clear_qr_codes, trigger=CronTrigger(hour=00, minute=00), max_instances=1)
     scheduler.start()
 
     return scheduler

@@ -11,7 +11,7 @@ import os
 from app.handlers.main import ai_router
 from app.servers.ai.generate import ai_generate
 from app.handlers.user.user import cmd_start
-from app.handlers.user.sched_handlers import update_channel_message
+from app.handlers.sched_handlers import update_channel_message
 import app.database.requests as common_rq
 import app.database.ai_requests as ai_rq
 import app.keyboards.user.user as kb

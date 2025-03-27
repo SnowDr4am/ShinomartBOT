@@ -2,7 +2,7 @@ from sqlalchemy import select, desc, func, case
 from datetime import datetime, timedelta
 import pytz
 from app.database.models import async_session
-from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, Review, Appointment, Settings
+from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, Review, Appointment, Settings, QRCode
 from sqlalchemy.orm import joinedload
 from app.servers.config import ADMIN_ID
 
@@ -360,3 +360,48 @@ async def set_daily_message_id(message_id: int) -> bool:
         except Exception as e:
             await session.rollback()
             return False
+
+async def get_user_role(user_tg_id: int) -> str | None:
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.user_id == str(user_tg_id))
+        )
+        user = result.scalars().first()
+        return user.role if user else None
+
+async def get_last_qr_code(user_id: int) -> QRCode | None:
+    async with async_session() as session:
+        result = await session.execute(
+            select(QRCode).where(QRCode.user_id == user_id).order_by(QRCode.created_at.desc())
+        )
+        return result.scalars().first()
+
+async def create_qr_code(user_id: int, phone_number: str) -> bool:
+    async with async_session() as session:
+            new_qr = QRCode(
+                user_id=user_id,
+                phone_number=phone_number,
+                created_at=datetime.now(EKATERINBURG_TZ).astimezone(pytz.UTC)
+            )
+            session.add(new_qr)
+            await session.commit()
+
+async def check_qr_code(phone_number: str) -> QRCode | None:
+    async with async_session() as session:
+        result = await session.execute(
+            select(QRCode).where(QRCode.phone_number == phone_number).order_by(QRCode.created_at.desc())
+        )
+        qr = result.scalars().first()
+        if qr and qr.created_at:
+            now_utc = datetime.now(EKATERINBURG_TZ).astimezone(pytz.UTC)
+            created_at_utc = qr.created_at.replace(tzinfo=pytz.UTC) if qr.created_at.tzinfo is None else qr.created_at
+            if (now_utc - created_at_utc) <= timedelta(minutes=30):
+                return qr
+        return None
+
+async def get_user_by_tg_id(user_tg_id: int) -> User | None:
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.user_id == str(user_tg_id))
+        )
+        return result.scalars().first()

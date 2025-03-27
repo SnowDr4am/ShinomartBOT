@@ -24,6 +24,8 @@ class User(Base):
     bonus_balance = relationship("UserBonusBalance", uselist=False, back_populates="user")
     reviews = relationship("Review", back_populates="user", lazy="dynamic")
     appointments = relationship("Appointment", back_populates="user", lazy="dynamic")
+    qr_codes = relationship("QRCode", back_populates="user")
+
 class PurchaseHistory(Base):
     __tablename__ = 'purchase_history'
 
@@ -94,6 +96,16 @@ class Settings(Base):
     __tablename__ = 'settings'
     id: Mapped[int] = mapped_column(primary_key=True)
     daily_message_id: Mapped[int] = mapped_column(Integer, nullable=True)
+
+class QRCode(Base):
+    __tablename__ = 'qr_codes'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
+    phone_number = mapped_column(String, nullable=False)
+    created_at = mapped_column(TIMESTAMP, nullable=False)
+
+    user = relationship("User", back_populates="qr_codes")
 
 async def async_main():
     async with engine.begin() as conn:

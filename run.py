@@ -6,7 +6,8 @@ from app.database.models import async_main
 from app.handlers.main import setup_middleware, user_router, admin_router, employee_router, ai_router
 from app.scheduler.tasks import setup_scheduler
 
-from app.handlers.user import user, registration, employee_assessment, ai_support, sched_handlers
+from app.handlers.user import user, registration, employee_assessment, ai_support, generate_qr
+from app.handlers import sched_handlers
 from app.handlers.admin import admin, bonus_system, personal
 from app.handlers.employee import employee, delete_appointment
 

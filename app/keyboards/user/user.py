@@ -23,6 +23,7 @@ main_menu = InlineKeyboardMarkup(inline_keyboard=[
 
 # Меню профиля
 profile = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='🎟️ Сгенерировать QR', callback_data='get_qrcode')],
     [InlineKeyboardButton(text='🛒 История покупок', callback_data='history_purchase')],
     [InlineKeyboardButton(text='🔙 Назад', callback_data='main_menu')],
 ])

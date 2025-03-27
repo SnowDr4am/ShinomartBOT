@@ -1,7 +1,8 @@
 from aiogram import F
 from aiogram.filters import CommandStart
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
-
+from app.handlers.employee.employee import handle_phone_selection_by_qr
 from app.handlers.main import user_router
 from app.servers.config import PHONE_NUMBER
 import app.keyboards.user.user as kb
@@ -10,7 +11,22 @@ import app.database.ai_requests as ai_rq
 
 
 @user_router.message(CommandStart())
-async def cmd_start(message: Message):
+async def cmd_start(message: Message, state: FSMContext):
+    phone_number = message.text.split(' ')[1] if len(message.text.split(' ')) > 1 else None
+
+    if phone_number:
+        user_role = await rq.get_user_role(message.from_user.id)
+        if not user_role or user_role not in ["Работник", "Администратор"]:
+            pass
+        else:
+            qr = await rq.check_qr_code(phone_number)
+            if not qr:
+                await message.answer("⛔ <b>QR-код недействителен</b>\nИстёк срок действия 😔", parse_mode="HTML")
+                return
+
+            await handle_phone_selection_by_qr(message, phone_number, state)
+            return
+
     if await rq.check_user_by_id(message.from_user.id):
         text = (
             "<b>Привет, друг!</b>\n\n"

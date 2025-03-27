@@ -4,7 +4,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import StatesGroup, State
 
 from app.handlers.main import employee_router
-from app.handlers.user.sched_handlers import update_channel_message
+from app.handlers.sched_handlers import update_channel_message
 import app.keyboards.employee.employee as kb
 import app.database.requests as rq
 import app.database.ai_requests as ai_rq
