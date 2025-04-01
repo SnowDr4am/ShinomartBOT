@@ -141,9 +141,9 @@ async def handle_phone_selection(callback: CallbackQuery, state: FSMContext):
         return
 
 
-async def handle_phone_selection_by_qr(message, phone_number, state: FSMContext):
+async def handle_phone_selection_by_qr(message, phone_number):
     user_data = await rq.get_user_by_phone(phone_number)
-
+    state = FSMContext
     if user_data:
         user_info_message = (
             "📋 <b>Профиль пользователя:</b>\n\n"

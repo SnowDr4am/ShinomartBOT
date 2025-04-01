@@ -11,7 +11,7 @@ import app.database.ai_requests as ai_rq
 
 
 @user_router.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext):
+async def cmd_start(message: Message):
     phone_number = message.text.split(' ')[1] if len(message.text.split(' ')) > 1 else None
 
     if phone_number:
@@ -24,7 +24,7 @@ async def cmd_start(message: Message, state: FSMContext):
                 await message.answer("⛔ <b>QR-код недействителен</b>\nИстёк срок действия 😔", parse_mode="HTML")
                 return
 
-            await handle_phone_selection_by_qr(message, phone_number, state)
+            await handle_phone_selection_by_qr(message, phone_number)
             return
 
     if await rq.check_user_by_id(message.from_user.id):
