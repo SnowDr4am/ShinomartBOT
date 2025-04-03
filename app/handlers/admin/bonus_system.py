@@ -294,8 +294,7 @@ async def process_give_bonus_user_id(message: Message, state: FSMContext):
                     f"❌ Пользователь с номером {user_input} не найден",
                     reply_markup=kb.cancel_bonus_system
                 )
-
-            await state.update_data(users_id=[user])
+            await state.update_data(users_id=[user.user_id])
             await message.answer(
                 f"👤 Бонусы будут начислены пользователю:\n"
                 f"<code>{user_input}</code>\n\n"
