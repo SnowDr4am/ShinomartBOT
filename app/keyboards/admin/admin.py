@@ -5,7 +5,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 main_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="📊 Статистика", callback_data='statistics')],
     [InlineKeyboardButton(text="💳 Бонусы", callback_data='bonus_system')],
-    [InlineKeyboardButton(text="👨‍💼 Работники", callback_data='employees')]
+    [InlineKeyboardButton(text="👨‍💼 Работники", callback_data='employees')],
+    [InlineKeyboardButton(text="💬 Отправить рассылку", callback_data='send_message')]
 ])
 
 # Выбор периода времени для статистики
@@ -147,4 +148,14 @@ async def get_user_profile_admin(user_id):
 
 delete_button_admin = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="❌ Удалить сообщение", callback_data='delete_button_admin')]
+])
+
+send_message_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='📝 Гайд по форматированию', callback_data='instructionHTML')],
+    [InlineKeyboardButton(text='❌ Отмена', callback_data='cancelAction')]
+])
+
+confirm_button = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='✅ Подтвердить', callback_data='confirmSendMessage')],
+    [InlineKeyboardButton(text='❌ Отмена', callback_data='cancelAction')]
 ])

@@ -55,6 +55,7 @@ class BonusSystem(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     cashback: Mapped[int] = mapped_column(Integer, default=5)
     max_debit: Mapped[int] = mapped_column(Integer, default=30)
+    start_bonus_balance: Mapped[int] = mapped_column(Integer, default=500)
 
 class RoleHistory(Base):
     __tablename__ = 'role_history'

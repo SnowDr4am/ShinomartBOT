@@ -8,7 +8,7 @@ from app.servers.config import ADMIN_ID
 
 EKATERINBURG_TZ = pytz.timezone('Asia/Yekaterinburg')
 
-async def set_user(user_id, date_today, name, mobile_phone, birthday):
+async def set_user(user_id, date_today, name, mobile_phone, birthday, bonus_balance):
     async with async_session() as session:
         user = await session.scalar(select(User).where(User.user_id == user_id))
         if not user:
@@ -28,7 +28,7 @@ async def set_user(user_id, date_today, name, mobile_phone, birthday):
 
             new_balance = UserBonusBalance(
                 user_id=new_user.user_id,
-                balance=0
+                balance=bonus_balance
             )
             session.add(new_balance)
 
@@ -168,7 +168,7 @@ async def get_bonus_system_settings():
         settings = result.first()
 
         if not settings:
-            new_settings = BonusSystem(cashback=5, max_debit=30)
+            new_settings = BonusSystem(cashback=5, max_debit=30, start_bonus_balance=300)
             session.add(new_settings)
             await session.commit()
 
@@ -177,6 +177,7 @@ async def get_bonus_system_settings():
         return {
             "cashback": settings.cashback,
             "max_debit": settings.max_debit,
+            "start_bonus_balance": settings.start_bonus_balance
         }
 
 

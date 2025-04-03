@@ -93,7 +93,9 @@ async def get_mobile_phone(message: Message, state: FSMContext):
         name = data.get("name")
         number = data.get("mobile_phone")
 
-        if await rq.set_user(message.from_user.id, datetime.now(), name, number, datetime.now()):
+        bonus_settings = await rq.get_bonus_system_settings()
+
+        if await rq.set_user(message.from_user.id, datetime.now(), name, number, datetime.now(), bonus_settings['start_bonus_balance']):
             await message.answer(
                 f"✅ <b>Регистрация завершена.</b>\n"
                 f"👤 <b>Имя:</b> {name}\n"

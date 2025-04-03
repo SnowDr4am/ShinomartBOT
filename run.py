@@ -8,7 +8,7 @@ from app.scheduler.tasks import setup_scheduler
 
 from app.handlers.user import user, registration, employee_assessment, ai_support, generate_qr
 from app.handlers import sched_handlers
-from app.handlers.admin import admin, bonus_system, personal
+from app.handlers.admin import admin, bonus_system, personal, send_message
 from app.handlers.employee import employee, delete_appointment
 
 async def main():

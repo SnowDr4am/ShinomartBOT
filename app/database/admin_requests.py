@@ -1,6 +1,6 @@
 from app.database.models import async_session
 from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, RoleHistory, Review
-from sqlalchemy import select, func, distinct, update
+from sqlalchemy import select, func, distinct, update, or_
 from sqlalchemy.orm import selectinload
 from datetime import datetime, timedelta
 
@@ -268,3 +268,14 @@ async def get_worker_reviews(worker_id: str) -> list[dict]:
             }
             for review, name, amount, transaction_type in reviews
         ]
+
+
+async def get_all_tg_id():
+    async with async_session() as session:
+        users = await session.scalars(
+            select(User.user_id)
+            .where(or_(User.role == 'Пользователь', User.role == 'Работник'))
+        )
+        result = users.all()
+
+        return result
