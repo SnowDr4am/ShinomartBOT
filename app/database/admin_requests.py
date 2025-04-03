@@ -1,8 +1,13 @@
+from mako.compat import win32
+
 from app.database.models import async_session
 from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, RoleHistory, Review
 from sqlalchemy import select, func, distinct, update, or_
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 from datetime import datetime, timedelta
+
+from app.keyboards.employee.employee import new_transaction
+
 
 async def get_statistics(period: str = "all"):
     async with async_session() as session:
@@ -71,13 +76,15 @@ async def set_bonus_system_settings(amount: int, setting_type: str):
         bonus_settings = query.scalar()
 
         if not bonus_settings:
-            bonus_settings = BonusSystem(cashback=5, max_debit=30)
+            bonus_settings = BonusSystem(cashback=5, max_debit=30, start_bonus_balance=500)
             session.add(bonus_settings)
 
         if setting_type == "cashback":
             bonus_settings.cashback = amount
         elif setting_type == "max_debit":
             bonus_settings.max_debit = amount
+        elif setting_type == "welcome_bonus":
+            bonus_settings.start_bonus_balance = amount
         else:
             raise ValueError("Некорректный тип параметра: используйте 'cashback' или 'max_debit'")
 
@@ -270,11 +277,22 @@ async def get_worker_reviews(worker_id: str) -> list[dict]:
         ]
 
 
-async def get_all_tg_id():
+async def get_tg_id_mailing():
     async with async_session() as session:
         users = await session.scalars(
             select(User.user_id)
             .where(or_(User.role == 'Пользователь', User.role == 'Работник'))
+        )
+        result = users.all()
+
+        return result
+
+
+async def get_tg_id_users():
+    async with async_session() as session:
+        users = await session.scalars(
+            select(User.user_id)
+            .where(User.role == 'Пользователь')
         )
         result = users.all()
 

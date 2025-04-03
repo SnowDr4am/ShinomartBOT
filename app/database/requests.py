@@ -163,12 +163,12 @@ async def set_bonus_balance(user_id, action, amount_bonus, amount_cell, worker_i
 
 async def get_bonus_system_settings():
     async with async_session() as session:
-        query = select(BonusSystem.cashback, BonusSystem.max_debit)
+        query = select(BonusSystem.cashback, BonusSystem.max_debit, BonusSystem.start_bonus_balance)
         result = await session.execute(query)
         settings = result.first()
 
         if not settings:
-            new_settings = BonusSystem(cashback=5, max_debit=30, start_bonus_balance=300)
+            new_settings = BonusSystem(cashback=5, max_debit=30, start_bonus_balance=500)
             session.add(new_settings)
             await session.commit()
 

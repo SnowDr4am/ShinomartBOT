@@ -11,8 +11,10 @@ from app.handlers.admin.admin import cmd_job
 
 # Изменение кешбека и макс списания
 class BonusSystemState(StatesGroup):
+    users_id = State()
     setting_type = State()
     amount = State()
+    giftAmount = State()
 
 
 @admin_router.callback_query(F.data.startswith('change:'))
@@ -23,8 +25,11 @@ async def change_setting(callback: CallbackQuery, state: FSMContext):
 
     await state.update_data(setting_type=setting_type)
     await state.set_state(BonusSystemState.amount)
+    text = f"✏️ Введите новое значение для <b>{setting_type}</b>"
+    if setting_type != "welcome_bonus":
+        text += " (в процентах)"
     await callback.message.answer(
-        f"✏️ Введите новое значение для <b>{setting_type}</b> (в процентах):",
+        text=text,
         parse_mode="HTML"
     )
 
@@ -34,21 +39,26 @@ async def handle_amount_input(message: Message, state: FSMContext):
     user_input = message.text.strip()
     try:
         amount = int(user_input)
-        if not (0 <= amount <= 100):
-            await message.answer(
-                "⚠️ Некорректное значение!\n"
-                "Введите число в диапазоне от <b>0</b> до <b>100</b>.",
-                parse_mode="HTML"
-            )
-
-            return
 
         data = await state.get_data()
         setting_type = data.get("setting_type")
 
+        report_text = f"✅ Значение <b>{setting_type} успешно обновлено</b> до {amount}"
+
+        if setting_type != "welcome_bonus":
+            report_text += "%"
+            if not (0 <= amount <= 100):
+                await message.answer(
+                    "⚠️ Некорректное значение!\n"
+                    "Введите число в диапазоне от <b>0</b> до <b>100</b>.",
+                    parse_mode="HTML"
+                )
+
+                return
+
         await rq.set_bonus_system_settings(amount, setting_type)
         await message.answer(
-            f"✅ Значение <b>{setting_type}</b> успешно обновлено до <b>{amount}%</b>!",
+            text=report_text,
             parse_mode="HTML"
         )
         await state.clear()
@@ -242,4 +252,132 @@ async def handle_amount_input(message: Message, state: FSMContext):
         )
 
 
+@admin_router.callback_query(F.data == 'presentBonus')
+async def present_bonus(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
 
+    await callback.message.answer(
+        "🎁 <b>Начисление бонусов</b>\n\n"
+        "Введите номер телефона пользователя (формат: 89998887766) "
+        "или напишите <code>all</code> для начисления всем:\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        parse_mode='HTML',
+        reply_markup=kb.cancel_bonus_system
+    )
+    await state.set_state(BonusSystemState.users_id)
+
+@admin_router.message(BonusSystemState.users_id)
+async def process_give_bonus_user_id(message: Message, state: FSMContext):
+    try:
+        user_input = message.text.strip().lower()
+        if user_input == "all":
+            users = await rq.get_tg_id_users()
+
+            await state.update_data(users_id=users)
+            await message.answer(
+                f"🔢 Бонусы будут начислены <b>{len(users)}</b> пользователям\n"
+                "Введите сумму бонусов:",
+                parse_mode='HTML',
+                reply_markup=kb.cancel_bonus_system
+            )
+            await state.set_state(BonusSystemState.giftAmount)
+        else:
+            if not user_input.isdigit() or len(user_input) != 11:
+                return await message.answer(
+                    "❌ Неверный формат номера. Пример: <code>89998887766</code>",
+                    parse_mode='HTML'
+                )
+
+            user = await common_rq.get_user_by_phone(user_input)
+            if not user:
+                return await message.answer(
+                    f"❌ Пользователь с номером {user_input} не найден",
+                    reply_markup=kb.cancel_bonus_system
+                )
+
+            await state.update_data(users_id=[user])
+            await message.answer(
+                f"👤 Бонусы будут начислены пользователю:\n"
+                f"<code>{user_input}</code>\n\n"
+                "Введите сумму бонусов:",
+                parse_mode='HTML',
+                reply_markup=kb.cancel_bonus_system
+            )
+            await state.set_state(BonusSystemState.giftAmount)
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {str(e)}")
+        await state.clear()
+        await cmd_job(message)
+
+
+@admin_router.message(BonusSystemState.giftAmount)
+async def process_gift(message: Message, state: FSMContext):
+    try:
+        amount = message.text.strip()
+
+        if not amount.isdigit() or int(amount) <= 0:
+            return await message.answer(
+                "❌ Введите целое положительное число",
+                reply_markup=kb.delete_button_admin
+            )
+
+        amount = int(amount)
+        data = await state.get_data()
+        users = data["users_id"]
+
+        success_count = 0
+        failed_users = []
+
+        for user_id in users:
+            try:
+                result = await common_rq.set_bonus_balance(user_id, "add", amount, 0, "Администратор")
+                if result:
+                    try:
+                        await message.bot.send_message(
+                            chat_id=user_id,
+                            text=(
+                                f"🎁 <b>Вам начислен бонус!</b>\n\n"
+                                f"▫️ Сумма: <b>{amount}</b> бонусов\n"
+                                f"▫️ Причина: Подарок от администратора\n\n"
+                            ),
+                            parse_mode='HTML'
+                        )
+                        success_count += 1
+                    except Exception as notify_error:
+                        failed_users.append(f"{user_id} (ошибка уведомления: {str(notify_error)})")
+
+                else:
+                    failed_users.append(str(user_id))
+
+            except Exception as e:
+                failed_users.append(f"{user_id} (ошибка: {str(e)})")
+
+        report = (
+            f"📊 <b>Результат начисления бонусов</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"• Всего пользователей: <b>{len(users)}</b>\n"
+            f"• Успешно: <b>{success_count}</b>\n"
+        )
+
+        if failed_users:
+            report += (
+                    f"\n❌ <b>Ошибки ({len(failed_users)}):</b>\n"
+                    + "\n".join(f"▫️ {user}" for user in failed_users[:5])
+            )
+            if len(failed_users) > 5:
+                report += f"\n... и ещё {len(failed_users) - 5} ошибок"
+
+        await message.answer(
+            report,
+            parse_mode='HTML',
+            reply_markup=kb.delete_button_admin
+        )
+
+    except Exception as e:
+        await message.answer(
+            f"❌ <b>Критическая ошибка:</b>\n{str(e)}",
+            parse_mode='HTML'
+        )
+    finally:
+        await state.clear()
+        await cmd_job(message)

@@ -26,6 +26,7 @@ time_period = InlineKeyboardMarkup(inline_keyboard=[
 bonus_system = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="💸 Изменить кешбек", callback_data='change:cashback')],
     [InlineKeyboardButton(text="💳 Изменить макс. списание", callback_data='change:max_debit')],
+    [InlineKeyboardButton(text="💎 Изменить приветственный бонус", callback_data='change:welcome_bonus')],
     [InlineKeyboardButton(text="👥 Взаимодействие с пользователями", callback_data='interact_with_user_bonus')],
     [InlineKeyboardButton(text="🔙 Назад", callback_data='back_to_main')]
 ])
@@ -34,6 +35,7 @@ users_balance = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="👤 Пользователи 1000–5000", callback_data='bonus_users:1000')],
     [InlineKeyboardButton(text="👥 Пользователи 5001–10000", callback_data='bonus_users:5000')],
     [InlineKeyboardButton(text="👑 Пользователи 10000+", callback_data='bonus_users:10000')],
+    [InlineKeyboardButton(text="🎁 Начислить бонусы", callback_data='presentBonus')],
     [InlineKeyboardButton(text="🔙 Назад", callback_data='bonus_system')]
 ])
 # Управление работниками
@@ -157,5 +159,9 @@ send_message_keyboard = InlineKeyboardMarkup(inline_keyboard=[
 
 confirm_button = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='✅ Подтвердить', callback_data='confirmSendMessage')],
+    [InlineKeyboardButton(text='❌ Отмена', callback_data='cancelAction')]
+])
+
+cancel_bonus_system = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='❌ Отмена', callback_data='cancelAction')]
 ])

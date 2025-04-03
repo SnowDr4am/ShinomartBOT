@@ -46,7 +46,7 @@ async def get_instruction(callback: CallbackQuery):
 @user_router.callback_query(F.data == 'send_message')
 async def send_message(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
-    users = await rq.get_all_tg_id()
+    users = await rq.get_tg_id_mailing()
     await callback.message.answer(
         f"✉️ <b>Напишите текст сообщения для рассылки</b>\n\n"
         f"📌 <i>Можно прикрепить фотографии, добавить к ним описание и отформатировать текст</i>\n",
