@@ -105,7 +105,7 @@ async def get_mobile_phone(message: Message, state: FSMContext):
 
             await state.clear()
 
-            await cmd_start(message)
+            await cmd_start(message, state)
         else:
             await message.answer("🚨 <b>Внутренняя ошибка.</b> Попробуйте позже.", parse_mode='HTML')
 

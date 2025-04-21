@@ -24,7 +24,7 @@ async def generate_qr(callback: CallbackQuery):
             await callback.answer("Ты можешь генерировать QR-код только раз в 30 минут!", show_alert=True)
             return
 
-    qr_link = f"https://t.me/testsnowdream_bot?start={user.mobile_phone}"
+    qr_link = f"https://t.me/ShinomartBOT?start={user.mobile_phone}"
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(qr_link)
     qr.make(fit=True)

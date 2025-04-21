@@ -126,8 +126,8 @@ async def handle_phone_selection(callback: CallbackQuery, state: FSMContext):
             f"💰 <b>Бонусный баланс:</b> {user_data.bonus_balance.balance} бонусов\n\n"
             "🔍 <i>Пожалуйста, выберите действие ниже.</i>"
         )
-
-        await callback.message.edit_text(user_info_message, parse_mode='HTML', reply_markup=kb.new_transaction)
+        keyboard = await kb.transaction_profile_keyboard(user_data.user_id)
+        await callback.message.edit_text(user_info_message, parse_mode='HTML', reply_markup=keyboard)
 
         await state.update_data(phone_number=phone_number)
         await state.update_data(bonus_balance=user_data.bonus_balance.balance)
@@ -152,7 +152,8 @@ async def handle_phone_selection_by_qr(message, phone_number, state: FSMContext)
             "🔍 <i>Пожалуйста, выберите действие ниже.</i>"
         )
         await message.delete()
-        await message.answer(user_info_message, parse_mode='HTML', reply_markup=kb.new_transaction)
+        keyboard = await kb.transaction_profile_keyboard(user_data.user_id)
+        await message.answer(user_info_message, parse_mode='HTML', reply_markup=keyboard)
 
         await state.update_data(phone_number=phone_number)
         await state.update_data(bonus_balance=user_data.bonus_balance.balance)

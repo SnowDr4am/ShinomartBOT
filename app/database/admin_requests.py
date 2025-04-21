@@ -6,8 +6,6 @@ from sqlalchemy import select, func, distinct, update, or_
 from sqlalchemy.orm import selectinload, joinedload
 from datetime import datetime, timedelta
 
-from app.keyboards.employee.employee import new_transaction
-
 
 async def get_statistics(period: str = "all"):
     async with async_session() as session:

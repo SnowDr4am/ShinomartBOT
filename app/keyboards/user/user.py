@@ -17,7 +17,6 @@ get_phone_number = ReplyKeyboardMarkup(
 # Главное меню
 main_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='👤 Профиль', callback_data='profile')],
-    [InlineKeyboardButton(text='⚙️ Записаться в сервис', callback_data='entry_server')],
     [InlineKeyboardButton(text='💬 Связаться с нами', callback_data='contact')]
 ])
 

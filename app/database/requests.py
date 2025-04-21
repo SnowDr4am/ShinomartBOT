@@ -104,7 +104,8 @@ async def get_last_10_transactions(user_id):
             .limit(10)
         )
         result = await session.execute(query)
-        return result.scalars().all()
+        transactions = result.scalars().all()
+        return list(reversed(transactions))
 
 
 async def get_phone_numbers_by_suffix(suffix: str):

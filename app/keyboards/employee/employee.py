@@ -4,7 +4,6 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardBu
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text='💳 Новая транзакция')],
-        [KeyboardButton(text='🗑️ Отменить запись')],
         [KeyboardButton(text='❌ Отмена')]
     ],
     resize_keyboard=True
@@ -54,15 +53,18 @@ async def approved_remove_appointment_keyboard(user_id: str) -> InlineKeyboardMa
     return keyboard
 
 # Клавиатура для нового транзакции
-new_transaction = InlineKeyboardMarkup(inline_keyboard=[
-    [
-        InlineKeyboardButton(text='💰 Пополнение', callback_data='transaction:add'),
-        InlineKeyboardButton(text='💸 Списание', callback_data='transaction:remove')
-    ],
-    [
-        InlineKeyboardButton(text='❌ Отмена', callback_data='transaction:cancel')
-    ]
-])
+async def transaction_profile_keyboard(user_id):
+    new_transaction = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text='💰 Пополнение', callback_data='transaction:add'),
+            InlineKeyboardButton(text='💸 Списание', callback_data='transaction:remove')
+        ],
+        [InlineKeyboardButton(text='🛒 История покупок', callback_data=f'history_purchase_user:{user_id}')],
+        [
+            InlineKeyboardButton(text='❌ Отмена', callback_data='transaction:cancel')
+        ]
+    ])
+    return new_transaction
 
 # Клавиатура для подтверждения транзакции
 confirm_transaction = InlineKeyboardMarkup(inline_keyboard=[
