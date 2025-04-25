@@ -157,6 +157,26 @@ async def view_user_profile(callback: CallbackQuery):
         parse_mode='HTML'
     )
 
+@admin_router.callback_query(F.data.startswith("none"))
+async def view_user_profile_msg(message: Message, user_id):
+    profile_user_data = await common_rq.get_user_profile(user_id)
+
+    registration_date = profile_user_data['registration_date'].replace("-", ".")
+
+    keyboard = await kb.get_user_profile_admin(user_id)
+
+    await message.answer(
+        f"<b>👤 Личный кабинет пользователя</b>\n"
+        f"<b>——————</b>\n\n"
+        f"<b>🆔 ID:</b> <code>{profile_user_data['user_id']}</code>\n\n"
+        f"<b>👋 Имя:</b> {profile_user_data['name']}\n\n"
+        f"<b>📅 Дата регистрации:</b> {registration_date}\n\n"
+        f"<b>📞 Номер телефона:</b> {profile_user_data['mobile_phone']}\n\n"
+        f"<b>💰 Бонусный баланс:</b> {profile_user_data['bonus_balance']} бонусов\n\n",
+        reply_markup=keyboard,
+        parse_mode='HTML'
+    )
+
 @admin_router.callback_query(F.data.startswith("history_purchase_user:"))
 async def history_purchase(callback: CallbackQuery):
     await callback.answer("")
@@ -165,7 +185,7 @@ async def history_purchase(callback: CallbackQuery):
     transactions = await common_rq.get_last_10_transactions(user_id)
 
     if not transactions:
-        await callback.message.answer("🛒 История покупок пользователя пуста")
+        await callback.message.answer("🛒 История покупок пользователя пуста", reply_markup=kb.delete_button_admin)
         return
 
     history_message = "📊 <b>История последних 10 покупок/списаний:</b>\n\n"
@@ -201,7 +221,7 @@ class GetAmount(StatesGroup):
     amount = State()
 
 @admin_router.callback_query(F.data.startswith("bonus:"))
-async def view_user_profile(callback: CallbackQuery, state: FSMContext):
+async def view_user_profile_bonus(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
     _, action, user_id = callback.data.split(":")
@@ -267,9 +287,9 @@ async def present_bonus(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
     await callback.message.answer(
-        "🎁 <b>Начисление бонусов</b>\n\n"
+        "🎁 <b>Начисление/Списание бонусов</b>\n\n"
         "Введите номер телефона пользователя (формат: 89998887766) "
-        "или напишите <code>all</code> для начисления всем:\n"
+        "или напишите <code>all</code> для начисления бонусов всем:\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         parse_mode='HTML',
         reply_markup=kb.cancel_bonus_system
@@ -304,15 +324,7 @@ async def process_give_bonus_user_id(message: Message, state: FSMContext):
                     f"❌ Пользователь с номером {user_input} не найден",
                     reply_markup=kb.cancel_bonus_system
                 )
-            await state.update_data(users_id=[user.user_id])
-            await message.answer(
-                f"👤 Бонусы будут начислены пользователю:\n"
-                f"<code>{user_input}</code>\n\n"
-                "Введите сумму бонусов:",
-                parse_mode='HTML',
-                reply_markup=kb.cancel_bonus_system
-            )
-            await state.set_state(BonusSystemState.giftAmount)
+            await view_user_profile_msg(message, user.user_id)
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)}")
         await state.clear()

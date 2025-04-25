@@ -2,7 +2,6 @@ from app.database.models import async_session
 from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, RoleHistory, Review, VipClient
 from sqlalchemy import select, func, distinct, update, or_, delete
 from sqlalchemy.orm import selectinload
-from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timedelta
 
 
@@ -346,3 +345,20 @@ async def remove_vip_client(phone_number):
         await session.commit()
 
         return result.rowcount > 0
+
+async def get_all_users_to_txt():
+    async with async_session() as session:
+        query = (
+            select(
+                User.registration_date,
+                User.name,
+                User.mobile_phone,
+                User.user_id,
+                func.coalesce(UserBonusBalance.balance, 0.0).label('balance')
+            )
+            .outerjoin(UserBonusBalance, User.user_id == UserBonusBalance.user_id)
+            .order_by(User.registration_date.desc())
+        )
+        result = await session.execute(query)
+        users = result.all()
+        return users

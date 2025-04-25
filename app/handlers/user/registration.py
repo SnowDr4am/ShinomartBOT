@@ -9,6 +9,7 @@ from app.handlers.user.user import cmd_start
 from app.handlers.main import user_router
 import app.keyboards.user.user as kb
 import app.database.requests as rq
+from app.servers.config import CHANNEL_ID
 
 
 class GetUserInfo(StatesGroup):
@@ -19,12 +20,8 @@ class GetUserInfo(StatesGroup):
 @user_router.callback_query(F.data == 'registration')
 async def registration(callback: CallbackQuery, state: FSMContext):
     await callback.answer("")
-    await callback.message.edit_text(
-        "📝 <b>Для регистрации мне необходимо собрать о Вас следующую информацию:</b>\n"
-        "— 👤 <b>Ваше имя</b>\n"
-        "— 📞 <b>Ваш номер телефона</b>\n",
-        parse_mode="HTML"
-    )
+
+    await callback.message.delete()
     await callback.message.answer(
         "🖊️ <b>Напишите, пожалуйста, Ваше имя</b>",
         parse_mode='HTML'
@@ -92,14 +89,29 @@ async def get_mobile_phone(message: Message, state: FSMContext):
         data = await state.get_data()
         name = data.get("name")
         number = data.get("mobile_phone")
+        user_id = message.from_user.id
 
         bonus_settings = await rq.get_bonus_system_settings()
 
-        if await rq.set_user(message.from_user.id, datetime.now(), name, number, datetime.now(), bonus_settings['start_bonus_balance']):
+        if await rq.set_user(user_id, datetime.now(), name, number, datetime.now(), bonus_settings['start_bonus_balance']):
             await message.answer(
                 f"✅ <b>Регистрация завершена.</b>\n"
                 f"👤 <b>Имя:</b> {name}\n"
                 f"📞 <b>Телефон:</b> {number}\n",
+                parse_mode='HTML'
+            )
+
+            user_link = f"@{message.from_user.username}" if message.from_user.username else f'<a href="tg://user?id={user_id}">{name}</a>'
+
+            await message.bot.send_message(
+                chat_id=CHANNEL_ID,
+                text = (
+                    f"💎 <b>Новый пользователь в боте:</b>\n"
+                    f"━━━━━━━━━━━━━━━━\n\n"
+                    f"🔹 <b>Имя:</b> {name}\n\n"
+                    f"🔹 <b>Телефон:</b> {number}\n\n"
+                    f"🔹 <b>Профиль</b> {user_link}"
+                ),
                 parse_mode='HTML'
             )
 

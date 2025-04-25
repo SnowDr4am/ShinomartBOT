@@ -19,6 +19,7 @@ time_period = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(text="📅 За месяц", callback_data='statistics:month'),
         InlineKeyboardButton(text="📅 За всё время", callback_data="statistics:all")
     ],
+    [InlineKeyboardButton(text="🔹 Выгрузить всех пользователей", callback_data='getAllUser')],
     [InlineKeyboardButton(text="◀️ Назад", callback_data='back_to_main')]
 ])
 
@@ -38,7 +39,7 @@ users_balance = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="👥 Пользователи 5001–10000", callback_data='bonus_users:5000')],
     [InlineKeyboardButton(text="🧑 Пользователи 10000+", callback_data='bonus_users:10000')],
     [InlineKeyboardButton(text="👑 VIP клиенты", callback_data='vipClients')],
-    [InlineKeyboardButton(text="🎁 Начислить бонусы", callback_data='presentBonus')],
+    [InlineKeyboardButton(text="🎁 Начислить/Списать бонусы", callback_data='presentBonus')],
     [InlineKeyboardButton(text="◀️ Назад", callback_data='bonus_system')]
 ])
 # Управление работниками
