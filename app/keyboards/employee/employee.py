@@ -76,3 +76,8 @@ confirm_transaction = InlineKeyboardMarkup(inline_keyboard=[
 assessment = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⭐ Поставить оценку работнику ⭐', callback_data='start_assessment')]
 ])
+
+approved_voting = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='📍 Яндекс карты', url='https://yandex.ru/navi/org/shinomart/226313350604/reviews/?ll=65.546626%2C57.131747&z=17')],
+    [InlineKeyboardButton(text='✅ Подтвердить отзыв', callback_data='voting_approve')]
+])

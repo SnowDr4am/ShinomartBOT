@@ -19,24 +19,27 @@ time_period = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(text="📅 За месяц", callback_data='statistics:month'),
         InlineKeyboardButton(text="📅 За всё время", callback_data="statistics:all")
     ],
-    [InlineKeyboardButton(text="🔙 Назад", callback_data='back_to_main')]
+    [InlineKeyboardButton(text="◀️ Назад", callback_data='back_to_main')]
 ])
 
 # Система бонусов
 bonus_system = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="💸 Изменить кешбек", callback_data='change:cashback')],
-    [InlineKeyboardButton(text="💳 Изменить макс. списание", callback_data='change:max_debit')],
-    [InlineKeyboardButton(text="💎 Изменить приветственный бонус", callback_data='change:welcome_bonus')],
-    [InlineKeyboardButton(text="👥 Взаимодействие с пользователями", callback_data='interact_with_user_bonus')],
-    [InlineKeyboardButton(text="🔙 Назад", callback_data='back_to_main')]
+    [InlineKeyboardButton(text="🔹 Изменить кешбэк", callback_data='change:cashback')],
+    [InlineKeyboardButton(text="🔹 Изменить макс. списание", callback_data='change:max_debit')],
+    [InlineKeyboardButton(text="🔹 Изменить приветственный бонус", callback_data='change:welcome_bonus')],
+    [InlineKeyboardButton(text="🔹 Изменить количество бонусов за отзыв", callback_data='change:voting_bonus')],
+    [InlineKeyboardButton(text="🔹 Изменить VIP кешбэк", callback_data='change:vip_cashback')],
+    [InlineKeyboardButton(text="🔹 Взаимодействие с пользователями", callback_data='interact_with_user_bonus')],
+    [InlineKeyboardButton(text="◀️ Назад", callback_data='back_to_main')]
 ])
 
 users_balance = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="👤 Пользователи 1000–5000", callback_data='bonus_users:1000')],
     [InlineKeyboardButton(text="👥 Пользователи 5001–10000", callback_data='bonus_users:5000')],
-    [InlineKeyboardButton(text="👑 Пользователи 10000+", callback_data='bonus_users:10000')],
+    [InlineKeyboardButton(text="🧑 Пользователи 10000+", callback_data='bonus_users:10000')],
+    [InlineKeyboardButton(text="👑 VIP клиенты", callback_data='vipClients')],
     [InlineKeyboardButton(text="🎁 Начислить бонусы", callback_data='presentBonus')],
-    [InlineKeyboardButton(text="🔙 Назад", callback_data='bonus_system')]
+    [InlineKeyboardButton(text="◀️ Назад", callback_data='bonus_system')]
 ])
 # Управление работниками
 manage_workers = InlineKeyboardMarkup(inline_keyboard=[
@@ -45,7 +48,7 @@ manage_workers = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(text="➕ Добавить работника", callback_data='action_admin:worker:add'),
         InlineKeyboardButton(text="➕ Добавить администратора", callback_data='action_admin:admin:add')
     ],
-    [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_main")]
+    [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_main")]
 ])
 
 # Выбор типа персонала (работник или администратор)
@@ -55,7 +58,7 @@ view_personal_type = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(text="👨‍💻 Список администраторов", callback_data='personal_list:admin')
     ],
     [
-        InlineKeyboardButton(text="🔙 Назад", callback_data='employees')
+        InlineKeyboardButton(text="◀️ Назад", callback_data='employees')
     ]
 ])
 
@@ -69,7 +72,7 @@ async def inline_personal(personal_dict):
                 callback_data=f"employee_profile:{user_id}:all"
             )
         )
-    keyboard.row(InlineKeyboardButton(text='🔙 Назад', callback_data='personal'))
+    keyboard.row(InlineKeyboardButton(text='◀️ Назад', callback_data='personal'))
 
     return keyboard.as_markup()
 
@@ -90,7 +93,7 @@ async def employee_stats(user_id):
         [
             InlineKeyboardButton(text="❌ Снять роль с пользователя", callback_data=f"action_admin:{user_id}:remove")
         ],
-        [InlineKeyboardButton(text="🔙 Назад", callback_data="employees")],
+        [InlineKeyboardButton(text="◀️ Назад", callback_data="employees")],
     ])
     return worker_profile
 
@@ -132,7 +135,7 @@ async def create_users_keyboard(users_dict: dict, page: int = 1, users_per_page:
                 pagination_buttons.append(InlineKeyboardButton(text="->", callback_data=f"page:{page + 1}"))
             keyboard.append(pagination_buttons)
 
-    keyboard.append([InlineKeyboardButton(text="Назад", callback_data="interact_with_user_bonus")])
+    keyboard.append([InlineKeyboardButton(text="◀️ Назад", callback_data="interact_with_user_bonus")])
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
@@ -143,7 +146,7 @@ async def get_user_profile_admin(user_id):
             InlineKeyboardButton(text="❌ Забрать бонусы", callback_data=f'bonus:remove:{user_id}'),
             InlineKeyboardButton(text="✅ Начислить бонусы", callback_data=f'bonus:add:{user_id}')
         ],
-        [InlineKeyboardButton(text='🔙 Назад', callback_data='back_to_main')],
+        [InlineKeyboardButton(text='◀️ Назад', callback_data='back_to_main')],
     ])
     return user_profile
 
@@ -164,4 +167,13 @@ confirm_button = InlineKeyboardMarkup(inline_keyboard=[
 
 cancel_bonus_system = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='❌ Отмена', callback_data='cancelAction')]
+])
+
+vip_clients_menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="👁️ Посмотреть VIP-клиентов", callback_data="viewVipClient")],
+    [
+        InlineKeyboardButton(text="➕ Добавить VIP-клиента", callback_data='changeVipClient:add'),
+        InlineKeyboardButton(text="➖ Удалить VIP-клиента", callback_data='changeVipClient:remove'),
+    ],
+    [InlineKeyboardButton(text="◀️ Назад", callback_data='bonus_system')]
 ])

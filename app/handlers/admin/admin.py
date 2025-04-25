@@ -88,10 +88,13 @@ async def bonus_system(callback: CallbackQuery):
     settings = await common_rq.get_bonus_system_settings()
 
     await callback.message.edit_text(
-        "<b>💎 Общая информация о бонусной системе</b>\n\n"
-        f"🔹 <b>Текущий кэшбек с покупок:</b> {settings['cashback']}%\n"
-        f"🔹 <b>Максимальное списание с покупки:</b> {settings['max_debit']}%\n"
-        f"🔹 <b>Приветственный бонус новым пользователям:</b> {settings['start_bonus_balance']}\n",
+        "<b>💎 Общая информация о бонусной системе</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"🔹 <b>Кэшбек с покупок:</b> {settings['cashback']}%\n\n"
+        f"🔹 <b>Максимальное списание с покупки:</b> {settings['max_debit']}%\n\n"
+        f"🔹 <b>Приветственный бонус новым пользователям:</b> {settings['start_bonus_balance']}\n\n"
+        f"🔹 <b>Количество бонусов за отзыв:</b> {settings['voting_bonus']}\n\n"
+        f"🔹 <b>Кэшбек VIP клиентам:</b> {settings['vip_cashback']}%",
         parse_mode='HTML',
         reply_markup=kb.bonus_system
     )

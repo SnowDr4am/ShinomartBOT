@@ -1,3 +1,5 @@
+from tabnanny import check
+
 from aiogram import F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -233,7 +235,11 @@ async def handle_amount_input(message: Message, state: FSMContext):
     bonus_balance = data.get("bonus_balance")
 
     current_bonus_settings = await rq.get_bonus_system_settings()
-    cashback = current_bonus_settings["cashback"]/100
+    check_vip_client = await rq.check_vip_client(phone_number)
+    if check_vip_client:
+        cashback = current_bonus_settings["vip_cashback"]/100
+    else:
+        cashback = current_bonus_settings["cashback"]/100
     max_debit = current_bonus_settings["max_debit"]/100
 
     await state.update_data(amount=amount, cashback=cashback, max_debit=max_debit)
@@ -265,6 +271,19 @@ async def handle_amount_input(message: Message, state: FSMContext):
                 reply_markup=kb.assessment,
                 parse_mode='HTML'
             )
+            check_vote_status = await rq.get_user_vote_history(user_data.user_id)
+            if check_vote_status:
+                bonus_system = await rq.get_bonus_system_settings()
+                await message.bot.send_message(
+                    chat_id=user_data.user_id,
+                    text=(
+                        "🎉 <b>У нас действует акция!</b> 🎉\n\n"
+                        f"💎 <b>За каждый положительный отзыв</b> мы начисляем <b>{bonus_system['voting_bonus']} бонусов</b> на ваш баланс!\n"
+                        "🔥 <b>Не упустите шанс получить больше!</b>"
+                    ),
+                    reply_markup=kb.approved_voting,
+                    parse_mode='HTML'
+                )
         else:
             await message.answer(
                 "⚠️ <b>Возникла ошибка при зачислении бонусов</b> 😞",
@@ -331,6 +350,19 @@ async def confirm_deduction(callback: CallbackQuery, state: FSMContext):
                 reply_markup=kb.assessment,
                 parse_mode='HTML'
             )
+            check_vote_status = await rq.get_user_vote_history(user_data.user_id)
+            if check_vote_status:
+                bonus_system = await rq.get_bonus_system_settings()
+                await callback.bot.send_message(
+                    chat_id=user_data.user_id,
+                    text=(
+                        "🎉 <b>У нас действует акция!</b> 🎉\n\n"
+                        f"💎 <b>За каждый положительный отзыв</b> мы начисляем <b>{bonus_system['voting_bonus']} бонусов</b> на ваш баланс!\n"
+                        "🔥 <b>Не упустите шанс получить больше!</b>"
+                    ),
+                    reply_markup=kb.approved_voting,
+                    parse_mode='HTML'
+                )
             await state.clear()
 
             await callback_employee(callback)
@@ -357,6 +389,19 @@ async def confirm_deduction(callback: CallbackQuery, state: FSMContext):
                 reply_markup=kb.assessment,
                 parse_mode='HTML'
             )
+            check_vote_status = await rq.get_user_vote_history(user_data.user_id)
+            if check_vote_status:
+                bonus_system = await rq.get_bonus_system_settings()
+                await callback.bot.send_message(
+                    chat_id=user_data.user_id,
+                    text=(
+                        "🎉 <b>У нас действует акция!</b> 🎉\n\n"
+                        f"💎 <b>За каждый положительный отзыв</b> мы начисляем <b>{bonus_system['voting_bonus']} бонусов</b> на ваш баланс!\n"
+                        "🔥 <b>Не упустите шанс получить больше!</b>"
+                    ),
+                    reply_markup=kb.approved_voting,
+                    parse_mode='HTML'
+                )
             await state.clear()
 
             await callback_employee(callback)

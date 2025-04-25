@@ -25,6 +25,8 @@ class User(Base):
     reviews = relationship("Review", back_populates="user", lazy="dynamic")
     appointments = relationship("Appointment", back_populates="user", lazy="dynamic")
     qr_codes = relationship("QRCode", back_populates="user")
+    vote_history = relationship("VoteHistory", back_populates="user")
+    vip_client = relationship("VipClient", back_populates="user", uselist=False)
 
 class PurchaseHistory(Base):
     __tablename__ = 'purchase_history'
@@ -56,6 +58,8 @@ class BonusSystem(Base):
     cashback: Mapped[int] = mapped_column(Integer, default=5)
     max_debit: Mapped[int] = mapped_column(Integer, default=30)
     start_bonus_balance: Mapped[int] = mapped_column(Integer, default=500)
+    voting_bonus: Mapped[int] = mapped_column(Integer, default=100)
+    vip_cashback: Mapped[int] = mapped_column(Integer, default=10)
 
 class RoleHistory(Base):
     __tablename__ = 'role_history'
@@ -107,6 +111,23 @@ class QRCode(Base):
     created_at = mapped_column(TIMESTAMP, nullable=False)
 
     user = relationship("User", back_populates="qr_codes")
+
+class VoteHistory(Base):
+    __tablename__ = 'vote_history'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    data = mapped_column(TIMESTAMP, nullable=False)
+
+    user = relationship("User", back_populates='vote_history')
+
+class VipClient(Base):
+    __tablename__ = "vip_clients"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+
+    user = relationship("User", back_populates="vip_client")
 
 async def async_main():
     async with engine.begin() as conn:

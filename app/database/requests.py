@@ -2,8 +2,8 @@ from sqlalchemy import select, desc, func, case
 from datetime import datetime, timedelta
 import pytz
 from app.database.models import async_session
-from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, Review, Appointment, Settings, QRCode
-from sqlalchemy.orm import joinedload
+from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, Review, Appointment, Settings, QRCode, VoteHistory, VipClient
+from sqlalchemy.orm import joinedload, selectinload
 from app.servers.config import ADMIN_ID
 
 EKATERINBURG_TZ = pytz.timezone('Asia/Yekaterinburg')
@@ -164,12 +164,12 @@ async def set_bonus_balance(user_id, action, amount_bonus, amount_cell, worker_i
 
 async def get_bonus_system_settings():
     async with async_session() as session:
-        query = select(BonusSystem.cashback, BonusSystem.max_debit, BonusSystem.start_bonus_balance)
+        query = select(BonusSystem.cashback, BonusSystem.max_debit, BonusSystem.start_bonus_balance, BonusSystem.voting_bonus, BonusSystem.vip_cashback)
         result = await session.execute(query)
         settings = result.first()
 
         if not settings:
-            new_settings = BonusSystem(cashback=5, max_debit=30, start_bonus_balance=500)
+            new_settings = BonusSystem(cashback=5, max_debit=30, start_bonus_balance=500, voting_bonus=250, vip_cashback=5)
             session.add(new_settings)
             await session.commit()
 
@@ -178,7 +178,9 @@ async def get_bonus_system_settings():
         return {
             "cashback": settings.cashback,
             "max_debit": settings.max_debit,
-            "start_bonus_balance": settings.start_bonus_balance
+            "start_bonus_balance": settings.start_bonus_balance,
+            "voting_bonus": settings.voting_bonus,
+            "vip_cashback": settings.vip_cashback
         }
 
 
@@ -407,3 +409,56 @@ async def get_user_by_tg_id(user_tg_id: int) -> User | None:
             select(User).where(User.user_id == str(user_tg_id))
         )
         return result.scalars().first()
+
+async def get_user_vote_history(user_id: str) -> bool:
+    async with async_session() as session:
+        result = await session.execute(
+            select(VoteHistory)
+            .join(User, User.id == VoteHistory.user_id)
+            .where(User.user_id == user_id)
+        )
+        vote_exists = result.scalars().first()
+        return not vote_exists
+
+async def create_voting_history(user_id):
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
+        user = result.scalars().first()
+
+        new_voting = VoteHistory(
+            user_id=user.id,
+            data=datetime.now(EKATERINBURG_TZ).astimezone(pytz.UTC)
+        )
+        session.add(new_voting)
+
+        await session.commit()
+
+async def create_vip_client(phone_number):
+    async with async_session() as session:
+        query = await session.execute(
+            select(User).where(User.mobile_phone == phone_number)
+        )
+        user = query.scalars().first()
+
+        if not user:
+            return False
+
+        new_vip_client = VipClient(user_id=user.id)
+        session.add(new_vip_client)
+        return True
+
+async def check_vip_client(phone_number):
+    async with async_session() as session:
+        query = await session.execute(
+            select(User).where(User.mobile_phone == phone_number)
+        )
+        user = query.scalars().first()
+
+        vip_query = await session.execute(
+            select(VipClient).where(VipClient.user_id == user.id)
+        )
+        vip_client = vip_query.scalars().first()
+
+        return vip_client or False

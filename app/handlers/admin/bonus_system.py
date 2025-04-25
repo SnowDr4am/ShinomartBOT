@@ -2,6 +2,8 @@ from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import StatesGroup, State
+
+from app.database.admin_requests import add_vip_client, remove_vip_client
 from app.handlers.main import admin_router
 import app.database.admin_requests as rq
 import app.database.requests as common_rq
@@ -15,6 +17,8 @@ class BonusSystemState(StatesGroup):
     setting_type = State()
     amount = State()
     giftAmount = State()
+    waiting_phone_add = State()
+    waiting_phone_remove = State()
 
 
 @admin_router.callback_query(F.data.startswith('change:'))
@@ -22,17 +26,17 @@ async def change_setting(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
     setting_type = callback.data.split(':')[1]
+    ru_setting_type = await setting_type_rus(setting_type)
 
     await state.update_data(setting_type=setting_type)
     await state.set_state(BonusSystemState.amount)
-    text = f"✏️ Введите новое значение для <b>{setting_type}</b>"
-    if setting_type != "welcome_bonus":
+    text = f"✏️ Введите новое значение для <b>{ru_setting_type}</b>"
+    if setting_type not in ["voting_bonus", "welcome_bonus"]:
         text += " (в процентах)"
     await callback.message.answer(
         text=text,
         parse_mode="HTML"
     )
-
 
 @admin_router.message(BonusSystemState.amount)
 async def handle_amount_input(message: Message, state: FSMContext):
@@ -42,10 +46,11 @@ async def handle_amount_input(message: Message, state: FSMContext):
 
         data = await state.get_data()
         setting_type = data.get("setting_type")
+        ru_setting_type = await setting_type_rus(setting_type)
 
-        report_text = f"✅ Значение <b>{setting_type} успешно обновлено</b> до {amount}"
+        report_text = f"✅ Значение для <b>{ru_setting_type} успешно обновлено</b> до {amount}"
 
-        if setting_type != "welcome_bonus":
+        if setting_type not in ["voting_bonus", "welcome_bonus"]:
             report_text += "%"
             if not (0 <= amount <= 100):
                 await message.answer(
@@ -70,6 +75,19 @@ async def handle_amount_input(message: Message, state: FSMContext):
             parse_mode="HTML"
         )
 
+async def setting_type_rus(setting_type):
+    if setting_type == 'cashback':
+        return "кэшбека"
+    elif setting_type == 'max_debit':
+        return "максимального списания"
+    elif setting_type == 'welcome_bonus':
+        return "приветственного бонуса"
+    elif setting_type == 'voting_bonus':
+        return "бонусов за отзыв"
+    elif setting_type == 'vip_cashback':
+        return "VIP кешбека"
+    else:
+        return setting_type
 
 # Меню взаимодействия с пользователями в бонусной системе
 @admin_router.callback_query(F.data == 'interact_with_user_bonus')
@@ -82,7 +100,6 @@ async def interact_with_users_bonus(callback: CallbackQuery):
         parse_mode='HTML',
         reply_markup=kb.users_balance
     )
-
 
 @admin_router.callback_query(F.data.startswith("bonus_users:"))
 async def employee_list(callback: CallbackQuery, state: FSMContext):
@@ -103,7 +120,6 @@ async def employee_list(callback: CallbackQuery, state: FSMContext):
         reply_markup=keyboard
     )
 
-
 @admin_router.callback_query(F.data.startswith("page:"))
 async def handle_pagination(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
@@ -116,7 +132,6 @@ async def handle_pagination(callback: CallbackQuery, state: FSMContext):
     keyboard = await kb.create_users_keyboard(users_dict, page=page)
 
     await callback.message.edit_reply_markup(reply_markup=keyboard)
-
 
 @admin_router.callback_query(F.data.startswith("bonus_user:"))
 async def view_user_profile(callback: CallbackQuery):
@@ -141,7 +156,6 @@ async def view_user_profile(callback: CallbackQuery):
         reply_markup=keyboard,
         parse_mode='HTML'
     )
-
 
 @admin_router.callback_query(F.data.startswith("history_purchase_user:"))
 async def history_purchase(callback: CallbackQuery):
@@ -177,13 +191,11 @@ async def history_purchase(callback: CallbackQuery):
 
     await callback.message.answer(history_message, parse_mode="HTML", reply_markup=kb.delete_button_admin)
 
-
 @admin_router.callback_query(F.data == "delete_button_admin")
 async def delete_history_message(callback: CallbackQuery):
     await callback.answer()
 
     await callback.message.delete()
-
 
 class GetAmount(StatesGroup):
     amount = State()
@@ -205,7 +217,6 @@ async def view_user_profile(callback: CallbackQuery, state: FSMContext):
         f"{text} \n👇",
         parse_mode="HTML"
     )
-
 
 @admin_router.message(GetAmount.amount)
 async def handle_amount_input(message: Message, state: FSMContext):
@@ -250,7 +261,6 @@ async def handle_amount_input(message: Message, state: FSMContext):
             "❌ Ошибка! Введите корректное целое число.",
             parse_mode="HTML"
         )
-
 
 @admin_router.callback_query(F.data == 'presentBonus')
 async def present_bonus(callback: CallbackQuery, state: FSMContext):
@@ -307,7 +317,6 @@ async def process_give_bonus_user_id(message: Message, state: FSMContext):
         await message.answer(f"❌ Ошибка: {str(e)}")
         await state.clear()
         await cmd_job(message)
-
 
 @admin_router.message(BonusSystemState.giftAmount)
 async def process_gift(message: Message, state: FSMContext):
@@ -380,3 +389,126 @@ async def process_gift(message: Message, state: FSMContext):
     finally:
         await state.clear()
         await cmd_job(message)
+
+@admin_router.callback_query(F.data == 'vipClients')
+async def vip_clients_menu(callback: CallbackQuery):
+    await callback.answer()
+
+    vip_clients = await rq.get_vip_clients()
+
+    await callback.message.edit_text(
+        "👑 <b>Вы перешли в раздел VIP-клиентов</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"📊 <b>Количество VIP-клиентов: {len(vip_clients)}</b>\n\n"
+        "🤝 <b>Для взаимодействия с этими пользователями воспользуйтесь меню ниже</b>",
+        parse_mode='HTML',
+        reply_markup=kb.vip_clients_menu_keyboard
+    )
+
+@admin_router.message(F.data == 'none')
+async def vip_clients_menu_msg(message: Message):
+    vip_clients = await rq.get_vip_clients()
+
+    await message.answer(
+        "👑 <b>Вы перешли в раздел VIP-клиентов</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"📊 <b>Количество VIP-клиентов: {len(vip_clients)}</b>\n\n"
+        "🤝 <b>Для взаимодействия с этими пользователями воспользуйтесь меню ниже</b>",
+        parse_mode='HTML',
+        reply_markup=kb.vip_clients_menu_keyboard
+    )
+
+@admin_router.callback_query(F.data == 'viewVipClient')
+async def view_vip_client(callback: CallbackQuery):
+    await callback.answer()
+
+    vip_clients = await rq.get_vip_clients()
+
+    if not vip_clients:
+        await callback.message.answer("📘 <b>Список VIP-клиентов пуст</b>")
+        return
+
+    message = "📘 <b>Список VIP-клиентов</b>\n\n"
+    for vip_client, user in vip_clients:
+        user_link = f'<a href="tg://user?id={user.user_id}">{user.name}</a>'
+        phone = user.mobile_phone
+        message += (
+            "━━━━━━━━━━━━━━━\n"
+            f"👤 <b>{user_link}</b>\n"
+            f"📞 <code>{phone}</code>\n"
+            "━━━━━━━━━━━━━━━\n"
+        )
+
+    await callback.message.answer(
+        message,
+        parse_mode='HTML',
+        reply_markup=kb.delete_button_admin
+    )
+
+@admin_router.callback_query(F.data.startswith("changeVipClient"))
+async def process_change_vip_client(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    _, action = callback.data.split(":")
+    if action == 'add':
+        await callback.message.answer(
+            "📘 <b>Введите номер телефона</b>\n"
+            "Чтобы добавить пользователя в список VIP-клиентов, отправьте его номер в следующем сообщении",
+            parse_mode='HTML'
+        )
+        await state.set_state(BonusSystemState.waiting_phone_add)
+    else:
+        await callback.message.answer(
+            "📘 <b>Введите номер телефона</b>\n"
+            "Чтобы удалить пользователя из списка VIP-клиентов, отправьте его номер в следующем сообщении",
+            parse_mode='HTML'
+        )
+        await state.set_state(BonusSystemState.waiting_phone_remove)
+
+@admin_router.message(BonusSystemState.waiting_phone_add)
+async def handle_phone_add(message: Message, state: FSMContext):
+    phone_number = message.text.strip()
+
+    try:
+        success = await add_vip_client(phone_number)
+        if success:
+            await message.answer(
+                f"✅ <b>Успешно!</b>\n"
+                f"📘 Пользователь с номером <code>{phone_number}</code> добавлен в список VIP-клиентов",
+                parse_mode='HTML'
+            )
+        else:
+            await message.answer(
+                f"⚠️ <b>Ошибка</b>\n"
+                f"Не удалось добавить пользователя с номером <code>{phone_number}</code>\n"
+                f"Возможно, он уже добавлен в базу",
+                parse_mode='HTML'
+            )
+    except ValueError as e:
+        await message.answer(str(e))
+    finally:
+        await state.clear()
+        await vip_clients_menu_msg(message)
+
+@admin_router.message(BonusSystemState.waiting_phone_remove)
+async def handle_phone_remove(message: Message, state: FSMContext):
+    phone_number = message.text.strip()
+
+    try:
+        success = await remove_vip_client(phone_number)
+        if success:
+            await message.answer(
+                f"✅ <b>Готово!</b>\n"
+                f"📘 Пользователь с номером <code>{phone_number}</code> удалён из списка VIP-клиентов",
+                parse_mode='HTML'
+            )
+        else:
+            await message.answer(
+                f"⚠️ <b>Не найден</b>\n"
+                f"Пользователь с номером <code>{phone_number}</code> не является VIP-клиентом",
+                parse_mode='HTML'
+            )
+    except ValueError as e:
+        await message.answer(str(e))
+    finally:
+        await state.clear()
+        await vip_clients_menu_msg(message)

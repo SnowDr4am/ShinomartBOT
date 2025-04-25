@@ -63,3 +63,25 @@ async def get_approved_appointment_keyboard(user_id):
                 [InlineKeyboardButton(text="❌ Отменить запись", callback_data=f"approved:{user_id}:remove")]
             ])
     return approved_appointment
+
+async def admin_voting_approval_keyboard(user_id):
+    approved_voting = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='✅ Подтвердить', callback_data=f"approvedVoting:{user_id}:yes"),
+                InlineKeyboardButton(text='❌ Отказать', callback_data=f"approvedVoting:{user_id}:no")
+            ]
+        ]
+    )
+    return approved_voting
+
+async def admin_voting_comment(user_id):
+    comment_voting = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='✅ Да', callback_data=f"commentVoting:{user_id}:yes"),
+                InlineKeyboardButton(text='❌ Нет', callback_data=f"commentVoting:{user_id}:no")
+            ]
+        ]
+    )
+    return comment_voting

@@ -1,9 +1,8 @@
-from mako.compat import win32
-
 from app.database.models import async_session
-from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, RoleHistory, Review
-from sqlalchemy import select, func, distinct, update, or_
-from sqlalchemy.orm import selectinload, joinedload
+from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, RoleHistory, Review, VipClient
+from sqlalchemy import select, func, distinct, update, or_, delete
+from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timedelta
 
 
@@ -74,15 +73,18 @@ async def set_bonus_system_settings(amount: int, setting_type: str):
         bonus_settings = query.scalar()
 
         if not bonus_settings:
-            bonus_settings = BonusSystem(cashback=5, max_debit=30, start_bonus_balance=500)
+            bonus_settings = BonusSystem(cashback=5, max_debit=30, start_bonus_balance=500, voting_bonus=150, vip_cashback=10)
             session.add(bonus_settings)
-
         if setting_type == "cashback":
             bonus_settings.cashback = amount
         elif setting_type == "max_debit":
             bonus_settings.max_debit = amount
         elif setting_type == "welcome_bonus":
             bonus_settings.start_bonus_balance = amount
+        elif setting_type == "voting_bonus":
+            bonus_settings.voting_bonus = amount
+        elif setting_type == "vip_cashback":
+            bonus_settings.vip_cashback = amount
         else:
             raise ValueError("Некорректный тип параметра: используйте 'cashback' или 'max_debit'")
 
@@ -295,3 +297,52 @@ async def get_tg_id_users():
         result = users.all()
 
         return result
+
+async def get_vip_clients():
+    async with async_session() as session:
+        query = await session.execute(
+            select(VipClient, User)
+            .join(User, VipClient.user_id == User.id)
+        )
+        vip_clients = query.all()
+
+        return vip_clients
+
+
+async def add_vip_client(phone_number: str) -> bool:
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.mobile_phone == phone_number)
+        )
+        user = result.scalars().first()
+
+        if not user:
+            raise ValueError(f"Пользователь с номером телефона {phone_number} не найден")
+
+        vip_result = await session.execute(
+            select(VipClient).where(VipClient.user_id == user.id)
+        )
+        if vip_result.scalars().first():
+            return False
+
+        new_vip_client = VipClient(user_id=user.id)
+        session.add(new_vip_client)
+
+        await session.commit()
+        return True
+
+
+async def remove_vip_client(phone_number):
+    async with async_session() as session:
+        query = await session.execute(
+            select(User).where(User.mobile_phone == phone_number)
+        )
+        user = query.scalars().first()
+
+        result = await session.execute(
+            delete(VipClient).where(VipClient.user_id == user.id)
+        )
+
+        await session.commit()
+
+        return result.rowcount > 0
