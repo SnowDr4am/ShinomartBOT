@@ -1,11 +1,10 @@
-from tabnanny import check
-
-from aiogram import F
+from aiogram import F, Bot
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import StatesGroup, State
 
+from app.servers.config import CHANNEL_ID
 from app.handlers.main import employee_router
 import app.keyboards.employee.employee as kb
 import app.database.requests as rq
@@ -256,6 +255,16 @@ async def handle_amount_input(message: Message, state: FSMContext):
         success = await rq.set_bonus_balance(user_data.user_id, "add", amount_bonus, amount, message.from_user.id)
         if success:
             await state.clear()
+
+            await send_report_to_channel(
+                bot=message.bot,
+                transaction_type=action,
+                user_data=user_data,
+                employee_id=message.from_user.id,
+                amount=amount,
+                bonus_amount=amount_bonus
+            )
+
             await message.answer(
                 f"🎉 <b>Начислено {amount_bonus:.2f} бонусов</b> пользователю {user_data.name} 🎁",
                 parse_mode='HTML',
@@ -336,6 +345,16 @@ async def confirm_deduction(callback: CallbackQuery, state: FSMContext):
         amount_bonus = amount * cashback
         success = await rq.set_bonus_balance(user_data.user_id, "add", amount_bonus, amount, callback.from_user.id)
         if success:
+
+            await send_report_to_channel(
+                bot=callback.bot,
+                transaction_type="add",
+                user_data=user_data,
+                employee_id=callback.from_user.id,
+                amount=amount,
+                bonus_amount=amount_bonus
+            )
+
             await callback.message.edit_text(
                 f"🎉 <b>Начислено {amount_bonus:.2f} бонусов</b> пользователю {user_data.name}",
                 parse_mode='HTML'
@@ -374,6 +393,16 @@ async def confirm_deduction(callback: CallbackQuery, state: FSMContext):
     else:
         success = await rq.set_bonus_balance(user_data.user_id, "remove", bonus_deduction, amount, callback.from_user.id)
         if success:
+            report_amount = amount-bonus_deduction
+            await send_report_to_channel(
+                bot=callback.bot,
+                transaction_type="remove",
+                user_data=user_data,
+                employee_id=callback.from_user.id,
+                amount=report_amount,
+                bonus_amount=bonus_deduction
+            )
+
             await callback.message.edit_text(
                 f"💳 <b>Списано {bonus_deduction:.2f} бонусов</b> с аккаунта пользователя {user_data.name}\n"
                 f"💰 <b>Итоговая цена для клиента:</b> {amount - bonus_deduction}",
@@ -410,3 +439,44 @@ async def confirm_deduction(callback: CallbackQuery, state: FSMContext):
                 "❗️ <b>Возникла ошибка при списании бонусов</b>.",
                 parse_mode='HTML'
             )
+
+async def send_report_to_channel(
+        bot: Bot,
+        transaction_type,
+        user_data,
+        employee_id,
+        amount,
+        bonus_amount
+):
+    employee_data = await rq.get_user_by_tg_id(employee_id)
+
+    user_profile_link = f'<a href="tg://user?id={user_data.user_id}">{user_data.name}</a>'
+    employee_profile_link = f'<a href="tg://user?id={employee_id}">{employee_data.name}</a>'
+
+    if transaction_type == "add":
+        message_text = (
+            "❇️ <b>Пополнение баллов:</b>\n"
+            "━━━━━━━━━━━━━━━━\n\n"
+            f"🔹<b>Пользователь:</b> {user_profile_link}\n\n"
+            f"🔹<b>Номер телефона:</b> {user_data.mobile_phone}\n\n"
+            f"🔹<b>Сумма покупки:</b> 🇷🇺{amount:.2f} рублей\n\n"
+            f"🔹<b>Количество начисленных бонусов:</b> {bonus_amount:.2f} бонусов\n\n"
+            f"🔹<b>Мастер:</b> {employee_profile_link}"
+        )
+    else:
+        message_text = (
+            "⛔️ <b>Списание баллов:</b>\n"
+            "━━━━━━━━━━━━━━━━\n\n"
+            f"🔹<b>Пользователь:</b> {user_profile_link}\n\n"
+            f"🔹<b>Номер телефона:</b> {user_data.mobile_phone}\n\n"
+            f"🔹<b>Цена для клиента:</b> 🇷🇺{amount:.2f} рублей\n\n"
+            f"🔹<b>Количество списанных бонусов:</b> {bonus_amount:.2f} бонусов\n\n"
+            f"🔹<b>Мастер:</b> {employee_profile_link}"
+        )
+
+    await bot.send_message(
+        chat_id=CHANNEL_ID,
+        text=message_text,
+        parse_mode='HTML',
+        disable_web_page_preview=True
+    )
