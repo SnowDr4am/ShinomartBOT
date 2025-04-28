@@ -138,7 +138,7 @@ back_to_all_promotions = InlineKeyboardMarkup(inline_keyboard=[
 
 feedback_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="📝 Оставить жалобу", callback_data='handleFeedback:complain')],
-    [InlineKeyboardButton(text="💡 Поделиться идеей", callback_data='handleFeedback:idea')],
+    [InlineKeyboardButton(text="💡 Оставить предложение", callback_data='handleFeedback:idea')],
     [InlineKeyboardButton(text='🔙 Назад', callback_data='main_menu')]
 ])
 
