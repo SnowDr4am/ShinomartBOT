@@ -147,3 +147,55 @@ async def contact_us(callback: CallbackQuery):
         parse_mode='HTML',
         reply_markup=kb.back_to_main_menu
     )
+
+@user_router.callback_query(F.data == "showPromotions")
+async def show_promotions(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+
+    promotions = await rq.get_all_promotions()
+    await state.update_data(promotions_dict=promotions)
+    keyboard = await kb.generage_promotions_keyboard(promotions, page=1)
+
+    await callback.message.edit_text(
+        "<b>Список акций</b> 🏷️",
+        parse_mode="HTML",
+        reply_markup=keyboard
+    )
+
+@user_router.callback_query(F.data.startswith("showPromotionsWithPage"))
+async def show_promotions_with_page(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+
+    page = int(callback.data.split(":")[1])
+    data = await state.get_data()
+
+    promotions = data.get("promotions_dict", {})
+    keyboard = await kb.generage_promotions_keyboard(promotions, page=page)
+
+    await callback.message.edit_reply_markup(reply_markup=keyboard)
+
+@user_router.callback_query(F.data == "showPromotionsBack")
+async def show_promotions(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await callback.message.delete()
+
+    promotions = await rq.get_all_promotions()
+    await state.update_data(promotions_dict=promotions)
+    keyboard = await kb.generage_promotions_keyboard(promotions, page=1)
+
+    await callback.message.answer(
+        "<b>Список акций</b> 🏷️\nВыберите акцию для управления:",
+        parse_mode="HTML",
+        reply_markup=keyboard
+    )
+
+@user_router.callback_query(F.data == 'feedback')
+async def show_feedback(callback: CallbackQuery):
+    await callback.answer()
+
+    await callback.message.edit_text(
+        "<b>Хотите оставить жалобу 📝 или поделиться идеей 💡, как сделать нас лучше?</b>\n\n"
+        "Выберите нужный пункт на клавиатуре ниже 👇",
+        parse_mode="HTML",
+        reply_markup=kb.feedback_keyboard
+    )

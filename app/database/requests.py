@@ -2,8 +2,8 @@ from sqlalchemy import select, desc, func, case
 from datetime import datetime, timedelta
 import pytz
 from app.database.models import async_session
-from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, Review, Appointment, Settings, QRCode, VoteHistory, VipClient
-from sqlalchemy.orm import joinedload, selectinload
+from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, Review, Appointment, Settings, QRCode, VoteHistory, VipClient, Promotion
+from sqlalchemy.orm import joinedload
 from app.servers.config import ADMIN_ID
 
 EKATERINBURG_TZ = pytz.timezone('Asia/Yekaterinburg')
@@ -462,3 +462,21 @@ async def check_vip_client(phone_number):
         vip_client = vip_query.scalars().first()
 
         return vip_client or False
+
+async def get_all_promotions():
+    async with async_session() as session:
+        promotions = await session.execute(
+            select(Promotion)
+        )
+        return {promo.id: {
+            'short_description': promo.short_description,
+            'is_active': promo.is_active
+        } for promo in promotions.scalars()}
+
+async def get_promo_by_id(promo_id):
+    async with async_session() as session:
+        result = await session.execute(
+            select(Promotion)
+            .where(Promotion.id == promo_id)
+        )
+        return result.scalars().first()

@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultLocation
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # Главное меню
@@ -6,6 +6,7 @@ main_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="📊 Статистика", callback_data='statistics')],
     [InlineKeyboardButton(text="💳 Бонусы", callback_data='bonus_system')],
     [InlineKeyboardButton(text="👨‍💼 Работники", callback_data='employees')],
+    [InlineKeyboardButton(text="🔥 Акции", callback_data='controlPromotions')],
     [InlineKeyboardButton(text="💬 Отправить рассылку", callback_data='send_message')]
 ])
 
@@ -178,3 +179,73 @@ vip_clients_menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     ],
     [InlineKeyboardButton(text="◀️ Назад", callback_data='bonus_system')]
 ])
+
+async def generate_control_promotions_keyboard(promotion_dict, page: int = 1):
+    keyboard = []
+    promotions_per_page = 5
+
+    promotions_list = list(promotion_dict.items())
+    total_promotions = len(promotions_list)
+    total_pages = (total_promotions + promotions_per_page - 1) // promotions_per_page
+
+    if total_promotions == 0:
+        keyboard.append([InlineKeyboardButton(text="Нет доступных акций", callback_data='none')])
+    else:
+        start = (page - 1) * promotions_per_page
+        end = start + promotions_per_page
+        promotions_on_page = promotions_list[start:end]
+
+        for promo_id, promo_data in promotions_on_page:
+            status = "✅" if promo_data.get('is_active', False) else "❌"
+            keyboard.append([InlineKeyboardButton(text=f"{promo_data['short_description']} {status}", callback_data=f"editPromo:{promo_id}")])
+
+        if total_pages > 1:
+            pagination_buttons = []
+            if page > 1:
+                pagination_buttons.append(InlineKeyboardButton(text="← Назад", callback_data=f"controlPromotionsWithPage:{page-1}"))
+
+            pagination_buttons.append(InlineKeyboardButton(text=f"{page}/{total_pages}", callback_data="none"))
+
+            if page < total_pages:
+                pagination_buttons.append(InlineKeyboardButton(text="Вперед →", callback_data=f"controlPromotionsWithPage:{page+1}"))
+
+            keyboard.append(pagination_buttons)
+    keyboard.append([
+        InlineKeyboardButton(text="➕ Добавить акцию", callback_data="addPromotion"),
+        InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_main")
+    ])
+
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+confirm_new_promotion = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="✅ Принять", callback_data="confirmNewPromotion:yes")],
+    [InlineKeyboardButton(text="❌ Отклонить", callback_data="confirmNewPromotion:no")]
+])
+
+async def get_promotion_management(promo_id):
+    builder = InlineKeyboardBuilder()
+
+    builder.row(InlineKeyboardButton(text="✏️ Изменить полное описание", callback_data=f"promotionEdit:full_text:{promo_id}"))
+    builder.row(InlineKeyboardButton(text="✏️ Изменить краткое описание", callback_data=f"promotionEdit:short_text:{promo_id}"))
+    builder.row(InlineKeyboardButton(text="🖼 Изменить изображение", callback_data=f"promotionEdit:image:{promo_id}"))
+    builder.row(InlineKeyboardButton(text="👁️ Скрыть/показать акцию", callback_data=f"promotionEdit:toggle:{promo_id}"))
+    builder.row(InlineKeyboardButton(text="❌ Удалить акцию", callback_data=f"promotionEdit:delete:{promo_id}"))
+    builder.row(InlineKeyboardButton(text="🗑️ Удалить сообщение", callback_data=f"delete_button_admin"))
+    builder.row(InlineKeyboardButton(text='◀️ Назад', callback_data='controlPromotionsBack'))
+
+    return builder.as_markup()
+
+async def get_promotion(promo_id):
+    builder = InlineKeyboardBuilder()
+
+    builder.row(InlineKeyboardButton(text="Показать обновленную акцию", callback_data=f"editPromo:{promo_id}"))
+
+    return builder.as_markup()
+
+async def confirm_delete_promotion(promo_id):
+    builder = InlineKeyboardBuilder()
+
+    builder.row(InlineKeyboardButton(text="✅ Да, удалить", callback_data=f"confirmDeletePromotion:{promo_id}"))
+    builder.row(InlineKeyboardButton(text="❌ Нет, отменить", callback_data=f"editPromo:{promo_id}"))
+
+    return builder.as_markup()

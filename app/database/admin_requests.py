@@ -1,8 +1,10 @@
-from app.database.models import async_session
+from app.database.models import async_session, Promotion
 from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, RoleHistory, Review, VipClient
 from sqlalchemy import select, func, distinct, update, or_, delete
 from sqlalchemy.orm import selectinload
 from datetime import datetime, timedelta
+
+from app.database.requests import get_promo_by_id
 
 
 async def get_statistics(period: str = "all"):
@@ -362,3 +364,48 @@ async def get_all_users_to_txt():
         result = await session.execute(query)
         users = result.all()
         return users
+
+async def add_promotion(data):
+    async with async_session() as session:
+        new_promo = Promotion(
+            short_description=data['short_description'],
+            full_description=data['full_text'],
+            image_path=data['image_path']
+        )
+        session.add(new_promo)
+        await session.commit()
+
+async def update_promotion(promo_id, **kwargs):
+    async with async_session() as session:
+        try:
+            result = await session.execute(
+                select(Promotion).where(Promotion.id == promo_id))
+            promo = result.scalars().first()
+
+            if not promo:
+                return False
+
+            for key, value in kwargs.items():
+                if hasattr(promo, key):
+                    setattr(promo, key, value)
+
+            session.add(promo)
+            
+            await session.commit()
+            return True
+        except Exception as e:
+            await session.rollback()
+            return False
+
+async def delete_promotion(promo_id):
+    async with async_session() as session:
+        try:
+            result = await session.execute(
+                delete(Promotion)
+                .where(Promotion.id == promo_id)
+            )
+            await session.commit()
+            return result.rowcount > 0
+        except Exception as e:
+            await session.rollback()
+            return False

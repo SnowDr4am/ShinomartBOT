@@ -2,6 +2,7 @@ import os
 import re
 from datetime import datetime
 import pandas as pd
+from aiogram.fsm.context import FSMContext
 from openpyxl.styles import Font
 from aiogram import F
 from aiogram.filters import Command
@@ -173,4 +174,46 @@ async def employee_list(callback: CallbackQuery):
         "📌 Используйте кнопки ниже для управления.",
         parse_mode='HTML',
         reply_markup=kb.manage_workers
+    )
+
+@admin_router.callback_query(F.data == 'controlPromotions')
+async def show_control_promotions(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+
+    promotions = await common_rq.get_all_promotions()
+    await state.update_data(promotions_dict=promotions)
+    keyboard = await kb.generate_control_promotions_keyboard(promotions, page=1)
+
+    await callback.message.edit_text(
+    "<b>Список акций</b> 🏷️\nВыберите акцию для управления:",
+        parse_mode="HTML",
+        reply_markup=keyboard
+    )
+
+@admin_router.callback_query(F.data.startswith('controlPromotionsWithPage'))
+async def show_control_promotions_with_page(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+
+    page = int(callback.data.split(":")[1])
+    data = await state.get_data()
+
+    promotions = data.get("promotions_dict", {})
+
+    keyboard = await kb.generate_control_promotions_keyboard(promotions, page=page)
+
+    await callback.message.edit_reply_markup(reply_markup=keyboard)
+
+@admin_router.callback_query(F.data == 'controlPromotionsBack')
+async def show_control_promotions(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await callback.message.delete()
+
+    promotions = await common_rq.get_all_promotions()
+    await state.update_data(promotions_dict=promotions)
+    keyboard = await kb.generate_control_promotions_keyboard(promotions, page=1)
+
+    await callback.message.answer(
+    "<b>Список акций</b> 🏷️\nВыберите акцию для управления:",
+        parse_mode="HTML",
+        reply_markup=keyboard
     )
