@@ -1,4 +1,4 @@
-from sqlalchemy import Float, String, TIMESTAMP, Date, Integer, ForeignKey, Boolean, func
+from sqlalchemy import Float, String, TIMESTAMP, Date, Integer, ForeignKey, Boolean, func, JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 import datetime
@@ -138,6 +138,39 @@ class Promotion(Base):
     image_path: Mapped[str] = mapped_column(String, nullable=True)
     created_ad = mapped_column(TIMESTAMP, server_default=func.now())
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class ItemType(Base):
+    __tablename__ = "item_types"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    value: Mapped[str] = mapped_column(String)
+
+    categories = relationship("Category", back_populates="item_type")
+
+
+class Category(Base):
+    __tablename__ = "categories"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    value: Mapped[str] = mapped_column(String)
+    type_id: Mapped[int] = mapped_column(ForeignKey("item_types.id"))
+
+    item_type = relationship("ItemType", back_populates="categories")
+    items = relationship("Item", back_populates="category")
+
+
+class Item(Base):
+    __tablename__ = "items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False)
+
+    value: Mapped[str] = mapped_column(String, nullable=False)
+    meta_data: Mapped[dict] = mapped_column(JSON, default={})
+
+    category = relationship("Category", back_populates="items")
+
 
 async def async_main():
     async with engine.begin() as conn:

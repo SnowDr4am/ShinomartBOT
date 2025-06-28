@@ -1,7 +1,7 @@
 from aiogram import F
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from datetime import datetime
 import re
 
@@ -98,7 +98,8 @@ async def get_mobile_phone(message: Message, state: FSMContext):
                 f"✅ <b>Регистрация завершена.</b>\n"
                 f"👤 <b>Имя:</b> {name}\n"
                 f"📞 <b>Телефон:</b> {number}\n",
-                parse_mode='HTML'
+                parse_mode='HTML',
+                reply_markup=ReplyKeyboardRemove()
             )
 
             user_link = f"@{message.from_user.username}" if message.from_user.username else f'<a href="tg://user?id={user_id}">{name}</a>'
