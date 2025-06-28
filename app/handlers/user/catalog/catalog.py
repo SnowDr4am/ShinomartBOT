@@ -1,15 +1,12 @@
-from datetime import datetime
-
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 
-from aiogram.types import CallbackQuery, Message
-from app.handlers.main import user_router, employee_router
+from aiogram.types import CallbackQuery
+from app.handlers.main import user_router
 import app.database.ItemService as ItemService
 import app.database.requests as rq
 import app.keyboards.user.catalog as catalog_kb
 from aiogram.utils.media_group import MediaGroupBuilder
-from app.utils.states import EditItemStates
 
 from .utils import *
 
@@ -17,7 +14,7 @@ from .utils import *
 @user_router.callback_query(F.data.startswith("catalog"))
 async def view_catalog(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
-    category, type_id = await get_category(callback.data.split(":")[1])
+    category, type_id = await get_category(int(callback.data.split(":")[1]))
 
     category_data = await ItemService.get_all_categories_with_active_items(type_id)
     await state.update_data(category=category, type_id=type_id)

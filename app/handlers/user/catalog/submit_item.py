@@ -3,6 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from aiogram.utils.media_group import MediaGroupBuilder
 
+from app.servers.config import TIRES_AND_DISCS_CHANNEL
 from app.handlers.main import user_router, admin_router
 import app.database.ItemService as ItemService
 import app.database.requests as rq
@@ -187,13 +188,12 @@ async def confirm_submission(callback: CallbackQuery, state: FSMContext):
         else:
             media.add_photo(media=photo_id)
 
-    CHANNEL_ID = -1002710028088
-    await callback.bot.send_media_group(chat_id=CHANNEL_ID, media=media.build())
+    await callback.bot.send_media_group(chat_id=TIRES_AND_DISCS_CHANNEL, media=media.build())
 
     keyboard = await catalog_kb.admin_review_submission_keyboard(callback.from_user.id)
 
     await callback.bot.send_message(
-        chat_id=CHANNEL_ID,
+        chat_id=TIRES_AND_DISCS_CHANNEL,
         text="🔎 Обработать заявку:",
         reply_markup=keyboard
     )
