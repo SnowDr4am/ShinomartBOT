@@ -15,7 +15,7 @@ async def get_catalog_keyboard(categories: List[Category], type_id: int) -> Inli
 
     builder.adjust(2)
 
-    category = "Предложить свою Б/У резину" if type_id == 1 else "Предложить свои Б/У диски"
+    category = "Предложить свои Б/У шины" if type_id == 1 else "Предложить свои Б/У диски"
     builder.row(InlineKeyboardButton(text=category, callback_data=f"submit_item:{type_id}"))
 
     builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data="main_menu"))

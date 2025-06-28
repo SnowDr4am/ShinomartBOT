@@ -17,7 +17,7 @@ get_phone_number = ReplyKeyboardMarkup(
 # Главное меню
 main_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='👤 Профиль', callback_data='profile')],
-    [InlineKeyboardButton(text='🛞 Б/У Резина', callback_data='catalog:1')],
+    [InlineKeyboardButton(text='🛞 Б/У Шины', callback_data='catalog:1')],
     [InlineKeyboardButton(text='⚙️ Б/У Диски', callback_data='catalog:2')],
     [InlineKeyboardButton(text='🔥 Акции', callback_data='showPromotions')],
     [InlineKeyboardButton(text='📖 Книга жалоб и предложений', callback_data='feedback')],

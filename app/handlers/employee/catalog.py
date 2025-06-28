@@ -13,7 +13,7 @@ from app.handlers.user.user import main_menu
 from app.handlers.user.catalog.utils import get_category
 
 
-@employee_router.message(F.text=='➕ Добавить Б/У резину или диски')
+@employee_router.message(F.text=='➕ Добавить Б/У шины или диски')
 async def start_create_new_item(message: Message):
     await message.answer(
         "📦 <b>Добавление новой позиции</b>\n\n"
@@ -161,7 +161,7 @@ async def preview_create_employee(message: Message, state: FSMContext):
     data = await state.get_data()
 
     category = await ItemService.get_category_by_id(int(data["category_id"]))
-    type_label = "Б/У Резина" if data["type_id"] == 1 else "Б/У Диски"
+    type_label = "Б/У Шины" if data["type_id"] == 1 else "Б/У Диски"
 
     caption = (
         f"<b>🆕 Новая позиция от сотрудника</b>\n\n"

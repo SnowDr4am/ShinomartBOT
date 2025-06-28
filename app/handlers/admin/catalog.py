@@ -33,7 +33,7 @@ async def show_used_items(callback: CallbackQuery):
     title_map = {
         "active": "🟢 В продаже",
         "sold": "✅ Продано",
-        "tires": "Б/У Резина",
+        "tires": "Б/У Шины",
         "discs": "Б/У Диски"
     }
 

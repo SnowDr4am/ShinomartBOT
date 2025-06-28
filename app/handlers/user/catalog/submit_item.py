@@ -102,17 +102,18 @@ async def process_price(message: Message, state: FSMContext):
 
 @user_router.message(SubmitItemStates.waiting_picture)
 async def handle_media_group(message: Message, state: FSMContext):
+    data = await state.get_data()
+    current_photos = data.get("photos", [])
+
     if message.text == "✅ Готово":
-        await message.answer("Формирую предпросмотр...", reply_markup=ReplyKeyboardRemove())
-        await preview_submission(message, state)
-        return
+        if current_photos:
+            await message.answer("Формирую предпросмотр...", reply_markup=ReplyKeyboardRemove())
+            await preview_submission(message, state)
+            return
 
     if not message.photo:
         await message.answer("⚠️ Пожалуйста, отправьте фото или нажмите ✅ Готово, если закончили.")
         return
-
-    data = await state.get_data()
-    current_photos = data.get("photos", [])
 
     if len(current_photos) >= 10:
         await message.answer("⚠️ Максимум 10 фото. Нажмите ✅ Готово для продолжения.")
@@ -127,7 +128,7 @@ async def preview_submission(message: Message, state: FSMContext):
     data = await state.get_data()
 
     category = await ItemService.get_category_by_id(int(data["category_id"]))
-    type_label = "Б/У Резина" if data["type_id"] == 1 else "Б/У Диски"
+    type_label = "Б/У Шины" if data["type_id"] == 1 else "Б/У Диски"
 
     caption = (
         f"<b>📦 Предпросмотр позиции</b>\n\n"
@@ -167,7 +168,7 @@ async def confirm_submission(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
 
     category = await ItemService.get_category_by_id(int(data["category_id"]))
-    type_label = "Б/У Резина" if data["type_id"] == 1 else "Б/У Диски"
+    type_label = "Б/У Шины" if data["type_id"] == 1 else "Б/У Диски"
 
     user = await rq.get_user_by_tg_id(callback.from_user.id)
 
@@ -210,7 +211,7 @@ async def handle_submit_admin_action(callback: CallbackQuery):
     telegram_user_id = int(user_id_str)
 
     if action == "yes":
-        text = f"✅ Пользователь: {callback.first_name} пригласил клиента"
+        text = f"✅ Пользователь: {callback.from_user.username} пригласил клиента"
         user_message = (
             "🎉 Ваша заявка одобрена!\n\n"
             "📍 Ждем вас в рабочее время по адресу:\n"

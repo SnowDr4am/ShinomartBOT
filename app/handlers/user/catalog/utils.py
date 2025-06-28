@@ -3,11 +3,11 @@ from typing import Tuple, Union
 
 async def get_category(arg: Union[str, int]) -> Tuple[str, int]:
     mapping_str = {
-        "tires": ("Б/У Резина", 1),
+        "tires": ("Б/У Шины", 1),
         "discs": ("Б/У Диски", 2)
     }
     mapping_int = {
-        1: ("Б/У Резина", 1),
+        1: ("Б/У Шины", 1),
         2: ("Б/У Диски", 2)
     }
     if isinstance(arg, str):

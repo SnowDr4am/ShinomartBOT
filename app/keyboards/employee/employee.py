@@ -4,7 +4,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardBu
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text='💳 Новая транзакция')],
-        [KeyboardButton(text='➕ Добавить Б/У резину или диски')],
+        [KeyboardButton(text='➕ Добавить Б/У шины или диски')],
         [KeyboardButton(text='❌ Отмена')]
     ],
     resize_keyboard=True

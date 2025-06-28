@@ -7,7 +7,7 @@ from typing import List
 from app.database.models import Category, Item
 
 employee_item_type_view = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Б/У Резина', callback_data='create_item:tires')],
+    [InlineKeyboardButton(text='Б/У Шины', callback_data='create_item:tires')],
     [InlineKeyboardButton(text='Б/У Диски', callback_data='create_item:discs')]
 ])
 

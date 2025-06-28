@@ -16,7 +16,7 @@ from app.handlers.admin.promotions import promotion_edit, promotion_add
 
 async def main():
     await async_main()
-    # await seed()
+    await seed()
     await setup_middleware()
 
     bot = Bot(token=BOT_TOKEN)
