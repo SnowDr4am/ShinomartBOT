@@ -5,4 +5,13 @@ class SubmitItemStates(StatesGroup):
     waiting_description = State()
     waiting_price = State()
     waiting_picture = State()
-    waiting_confirm = State()
+
+class CreateItemStates(StatesGroup):
+    waiting_brand = State()
+    waiting_description = State()
+    waiting_price = State()
+    waiting_picture = State()
+
+class EditItemStates(StatesGroup):
+    waiting_field_input = State()
+    waiting_photos = State()

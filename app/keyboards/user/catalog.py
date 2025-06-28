@@ -40,9 +40,17 @@ async def get_item_keyboard(
     end_idx = start_idx + page_size
     page_items = items[start_idx:end_idx]
 
+    season_emoji_map = {
+        "summer": "☀️",
+        "winter": "❄️",
+        "allseason": "🌦️"
+    }
+
     for item in page_items:
         price = item.meta_data.get("price", "Цена не указана")
-        text = f"{item.value} — {price} ₽"
+        season = item.meta_data.get("season", "").lower()
+        emoji = season_emoji_map.get(season, "")
+        text = f"{emoji} {item.value} — {price} ₽" if emoji else f"{item.value} — {price} ₽"
         builder.button(text=text, callback_data=f"item:{item.id}")
 
     builder.adjust(1)
@@ -88,4 +96,11 @@ async def admin_review_submission_keyboard(telegram_user_id: int) -> InlineKeybo
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🤝 Пригласить клиента", callback_data=f"submit_admin_action:yes:{telegram_user_id}")],
         [InlineKeyboardButton(text="🚫 Отказать клиенту", callback_data=f"submit_admin_action:no:{telegram_user_id}")]
+    ])
+
+async def employee_item_card_keyboard(item_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Товар продан", callback_data=f"item_card_action:{item_id}:sold")],
+        [InlineKeyboardButton(text="✏️ Отредактировать карточку", callback_data=f"item_card_action:{item_id}:edit")],
+        [InlineKeyboardButton(text="❌ Удалить сообщение", callback_data="delete_button_user")]
     ])

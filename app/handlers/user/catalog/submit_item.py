@@ -75,7 +75,7 @@ async def process_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text.strip())
 
     await message.answer(
-        "💰 Введите стоимость (число в рублях)\n"
+        "💰 Введите стоимость за комплект (число в рублях)\n"
         "Введите 'отмена' чтобы прервать операцию"
     )
     await state.set_state(SubmitItemStates.waiting_price)
@@ -213,7 +213,7 @@ async def handle_submit_admin_action(callback: CallbackQuery):
         text = f"✅ Пользователь: {callback.first_name} пригласил клиента"
         user_message = (
             "🎉 Ваша заявка одобрена!\n\n"
-            "📍 Подъедьте, пожалуйста, в рабочее время по адресу:\n"
+            "📍 Ждем вас в рабочее время по адресу:\n"
             "г. Тюмень, ул. Правды 64А (Шиномарт)"
         )
     elif action == "no":

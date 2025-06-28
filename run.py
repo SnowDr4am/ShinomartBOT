@@ -10,8 +10,8 @@ from app.database.seed import seed
 
 from app.handlers.user import user, registration, employee_assessment, generate_qr, voting_approved, promotions, feedback
 from app.handlers.user.catalog import catalog, submit_item
-from app.handlers.employee import employee
-from app.handlers.admin import admin, bonus_system, personal, send_message
+from app.handlers.employee import employee, catalog, catalog_edit
+from app.handlers.admin import admin, bonus_system, personal, send_message, catalog
 from app.handlers.admin.promotions import promotion_edit, promotion_add
 
 async def main():
