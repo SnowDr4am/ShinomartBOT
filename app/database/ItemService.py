@@ -1,7 +1,7 @@
 from sqlalchemy import select, func,and_
 from sqlalchemy.orm import selectinload
 from typing import List
-from .models import async_session, Category, Item
+from .models import async_session, Category, Item, ItemType
 
 async def get_all_categories(type_id: int) -> List[Category]:
     async with async_session() as session:
@@ -43,6 +43,26 @@ async def get_items_by_category(category_id: int, status: str) -> List[Item]:
 
         return items
 
+async def get_items_by_type(type_id: int, status: str) -> List[Item]:
+    async with async_session() as session:
+        stmt = (
+            select(Item)
+            .join(Item.category)  # join к Category
+            .join(Category.item_type)  # join к ItemType
+            .options(
+                selectinload(Item.category).selectinload(Category.item_type)  # чтобы потом не было N+1
+            )
+            .where(
+                and_(
+                    ItemType.id == type_id,
+                    func.json_extract(Item.meta_data, '$.status') == status
+                )
+            )
+        )
+        result = await session.execute(stmt)
+        items = result.scalars().all()
+        return items
+
 async def get_category_by_id(category_id: int) -> Category:
     async with async_session() as session:
         result = await session.execute(select(Category).where(Category.id == category_id))
@@ -53,14 +73,18 @@ async def get_category_by_id(category_id: int) -> Category:
 async def create_item_from_employee(
     category_id: int,
     brand: str,
+    params: str,
     description: str,
+    amount: int,
     price: int,
     photos: list[str],
     season: str = None
 ):
         meta_data = {
             "status": "active",
+            "params": params,
             "description": description,
+            "amount": amount,
             "price": price,
             "photos": photos
         }

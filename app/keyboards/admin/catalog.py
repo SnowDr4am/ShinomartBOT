@@ -4,7 +4,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import math
 
 
-def used_goods_submenu_keyboard(type_: str) -> InlineKeyboardMarkup:
+def used_goods_submenu_keyboard(type_: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="✅ В продаже", callback_data=f"used_items:{type_}:active")],
         [InlineKeyboardButton(text="❌ Продано", callback_data=f"used_items:{type_}:sold")],
@@ -13,7 +13,7 @@ def used_goods_submenu_keyboard(type_: str) -> InlineKeyboardMarkup:
     ])
 
 
-def get_admin_items_keyboard(items: list, status: str, type_: str, page: int = 1, page_size: int = 10) -> InlineKeyboardMarkup:
+def get_admin_items_keyboard(items: list, status: str, type_: int, page: int = 1, page_size: int = 10) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     total_items = len(items)
@@ -48,7 +48,11 @@ def get_admin_items_keyboard(items: list, status: str, type_: str, page: int = 1
 
     builder.row(*nav_buttons)
     builder.row(
-        InlineKeyboardButton(text="🔙 Назад", callback_data=f"admin_used_{type_}")
+        InlineKeyboardButton(text="🔙 Назад", callback_data=f"admin_used:{type_}")
     )
 
     return builder.as_markup()
+
+back_to_admin_menu = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='🔙 Назад', callback_data="back_to_main")]
+])

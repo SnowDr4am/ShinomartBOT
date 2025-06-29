@@ -8,8 +8,8 @@ main_menu = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="👨‍💼 Работники", callback_data='employees')],
     [InlineKeyboardButton(text="🔥 Акции", callback_data='controlPromotions')],
     [InlineKeyboardButton(text="💬 Отправить рассылку", callback_data='send_message')],
-    [InlineKeyboardButton(text="🛞 Б/У Шины", callback_data='admin_used:tires')],
-    [InlineKeyboardButton(text="⚙️ Б/У Диски", callback_data='admin_used:discs')],
+    [InlineKeyboardButton(text="🛞 Б/У Шины", callback_data='admin_used:1')],
+    [InlineKeyboardButton(text="⚙️ Б/У Диски", callback_data='admin_used:2')],
 ])
 
 # Выбор периода времени для статистики

@@ -5,7 +5,7 @@ from aiogram.utils.media_group import MediaGroupBuilder
 
 from app.handlers.main import user_router, admin_router, employee_router
 import app.database.ItemService as ItemService
-import app.database.requests as rq
+import app.keyboards.employee.employee as kb
 import app.keyboards.employee.catalog as catalog_kb
 from app.utils.states import CreateItemStates
 from app.handlers.user.user import main_menu
@@ -93,8 +93,30 @@ async def process_brand(message: Message, state: FSMContext):
 
     await state.update_data(brand=text)
     await message.answer(
+        "<b>🛠 Введите параметры товара</b>\n\n"
+        "<b>🔹 Для шин:</b> в формате <code>ширина/профиль</code>\n"
+        "Пример: <code>185/65</code>\n\n"
+        "<b>🔹 Для дисков:</b> в формате <code>ширина/PCD/ET/ЦО</code>\n"
+        "Пример: <code>6.5/5x114.3/ET38/ЦО67.1</code>\n\n"
+        "Введите <code>отмена</code>, чтобы прервать операцию.",
+        parse_mode='HTML'
+    )
+    await state.set_state(CreateItemStates.waiting_params)
+
+
+@employee_router.message(CreateItemStates.waiting_params)
+async def process_params(message: Message, state: FSMContext):
+    text = message.text.strip()
+    if not text:
+        await message.answer("⚠️ Пожалуйста, введите параметры шины или 'отмена' для выхода.")
+        return
+
+    await state.update_data(params=text)
+
+    await message.answer(
         "🛠 Опишите состояние / износ / дефекты\n"
-        "Введите 'отмена' для прерывания."
+        "Введите 'отмена' для прерывания",
+        parse_mode='HTML'
     )
     await state.set_state(CreateItemStates.waiting_description)
 
@@ -108,8 +130,27 @@ async def process_description(message: Message, state: FSMContext):
 
     await state.update_data(description=text)
     await message.answer(
-        "💰 Введите цену в рублях за 1 шт. (только цифры)\n"
-        "Пример: <code>4500</code>",
+        "<b>🔢 Введите количество</b>\n\n"
+        "Укажите, сколько единиц товара вы хотите предложить\n"
+        "Например: <code>4</code>\n\n"
+        "Введите <code>отмена</code>, чтобы прервать операцию",
+        parse_mode="HTML"
+    )
+    await state.set_state(CreateItemStates.waiting_amount)
+
+
+@employee_router.message(CreateItemStates.waiting_amount)
+async def process_amount(message: Message, state: FSMContext):
+    text = message.text.strip().lower()
+    if not text.isdigit():
+        await message.answer("⚠️ Введите корректное количество или 'отмена' для выхода.")
+        return
+
+    await state.update_data(amount=int(text))
+
+    await message.answer(
+        "💰 Введите цену в рублях (только цифры)\n"
+        "Пример: <code>15000</code>",
         parse_mode='HTML'
     )
     await state.set_state(CreateItemStates.waiting_price)
@@ -125,9 +166,9 @@ async def process_price(message: Message, state: FSMContext):
 
     await state.update_data(price=int(text))
     await message.answer(
-        "📸 Отправьте до 10 фото.\nПосле загрузки нажмите <b>✅ Готово</b>.",
-        reply_markup=catalog_kb.success_upload_picture,
-        parse_mode='HTML'
+        "📸 Теперь отправьте фотографии\nДождитесь полной загрузки изображений и нажмите '✅ Готово' на клавиатуре",
+        parse_mode='HTML',
+        reply_markup=catalog_kb.success_upload_picture
     )
     await state.update_data(photos=[])
     await state.set_state(CreateItemStates.waiting_picture)
@@ -135,17 +176,18 @@ async def process_price(message: Message, state: FSMContext):
 
 @employee_router.message(CreateItemStates.waiting_picture)
 async def handle_photos(message: Message, state: FSMContext):
+    data = await state.get_data()
+    current_photos = data.get("photos", [])
+
     if message.text == "✅ Готово":
-        await message.answer("⏳ Формирую предпросмотр...", reply_markup=ReplyKeyboardRemove())
-        await preview_create_employee(message, state)
-        return
+        if current_photos:
+            await message.answer("⏳ Формирую предпросмотр...", reply_markup=ReplyKeyboardRemove())
+            await preview_create_employee(message, state)
+            return
 
     if not message.photo:
         await message.answer("⚠️ Отправьте фото или нажмите ✅ Готово.")
         return
-
-    data = await state.get_data()
-    current_photos = data.get("photos", [])
 
     if len(current_photos) >= 10:
         await message.answer("📛 Вы загрузили максимум 10 фото.")
@@ -175,7 +217,9 @@ async def preview_create_employee(message: Message, state: FSMContext):
 
     caption += (
         f"<b>🏷 Бренд:</b> {data['brand']}\n"
+        f"🔹 <b>Параметры:</b> {data['params']}\n"
         f"<b>📝 Описание:</b> {data['description']}\n"
+        f"📦 <b>Количество:</b> {data['amount']} шт.\n"
         f"<b>💰 Цена:</b> {data['price']} ₽"
     )
 
@@ -209,11 +253,14 @@ async def confirm_employee_create(callback: CallbackQuery, state: FSMContext):
     await ItemService.create_item_from_employee(
         category_id=data["category_id"],
         brand=data["brand"],
+        params=data["params"],
         description=data["description"],
+        amount=data['amount'],
         price=data["price"],
         photos=data["photos"],
         season=data.get("season")
     )
 
     await state.clear()
-    await callback.message.edit_text("✅ Позиция успешно добавлена в базу данных")
+    await callback.message.delete()
+    await callback.message.answer("✅ Позиция успешно добавлена в базу данных", reply_markup=kb.main_menu)

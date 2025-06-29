@@ -2,7 +2,7 @@ from sqlalchemy import select
 from .models import ItemType, Category, async_session
 
 ITEM_TYPES = ["Резина", "Диски"]
-R_VALUES = [f"R{r}" for r in range(14, 23)]
+R_VALUES = [f"R{r}" for r in range(13, 23)]
 
 
 async def seed():

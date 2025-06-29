@@ -14,7 +14,7 @@ from app.handlers.user.user import main_menu
 from .utils import *
 
 
-@user_router.callback_query(F.data.startswith("submit_item"))
+@user_router.callback_query(F.data.startswith("submit_item:"))
 async def start_submit_new_item(callback: CallbackQuery):
     await callback.answer()
 
@@ -38,15 +38,38 @@ async def submit_radius_chosen(callback: CallbackQuery, state: FSMContext):
 
     type_id = int(callback.data.split(":")[1])
     category_id = int(callback.data.split(":")[2])
+    category_name, _ = await get_category(type_id)
 
     await state.update_data(category_id=category_id, type_id=type_id)
 
+    if type_id == 1:
+        await callback.message.edit_text(
+            f"❄️ <b>{category_name}</b> — укажите сезон использования:\n\n"
+            "Выберите один из вариантов ниже 👇",
+            parse_mode='HTML',
+            reply_markup=catalog_kb.user_season_view
+        )
+    else:
+        await callback.message.edit_text(
+            "🏷 <b>Введите название бренда</b>\n\n"
+            "🛑 Напишите <code>отмена</code>, чтобы выйти на любом этапе.",
+            parse_mode='HTML'
+        )
+        await state.set_state(SubmitItemStates.waiting_brand)
+
+
+@user_router.callback_query(F.data.startswith("submit_item_season:"))
+async def handle_tires_season(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+
+    season = callback.data.split(":")[1]
+    await state.update_data(season=season)
+
     await callback.message.edit_text(
-        f"Введите название бренда\n\n"
-        f"Введите 'отмена', чтобы прервать операцию на любом этапе",
+        "🏷 <b>Введите название бренда</b>\n\n"
+        "🛑 Напишите <code>отмена</code>, чтобы выйти на любом этапе.",
         parse_mode='HTML'
     )
-
     await state.set_state(SubmitItemStates.waiting_brand)
 
 
@@ -60,8 +83,30 @@ async def process_brand(message: Message, state: FSMContext):
     await state.update_data(brand=message.text.strip())
 
     await message.answer(
-        "🛠 Введите описание состояния, недочетов\n"
-        "Введите 'отмена' чтобы прервать операцию"
+        "<b>🛠 Введите параметры товара</b>\n\n"
+        "<b>🔹 Для шин:</b> в формате <code>ширина/профиль</code>\n"
+        "Пример: <code>185/65</code>\n\n"
+        "<b>🔹 Для дисков:</b> в формате <code>ширина/PCD/ET/ЦО</code>\n"
+        "Пример: <code>6.5/5x114.3/ET38/ЦО67.1</code>\n\n"
+        "Введите <code>отмена</code>, чтобы прервать операцию.",
+        parse_mode='HTML'
+    )
+    await state.set_state(SubmitItemStates.waiting_params)
+
+
+@user_router.message(SubmitItemStates.waiting_params)
+async def process_params(message: Message, state: FSMContext):
+    text = message.text.strip()
+    if not text:
+        await message.answer("⚠️ Пожалуйста, введите параметры шины или 'отмена' для выхода.")
+        return
+
+    await state.update_data(params=text)
+
+    await message.answer(
+        "🛠 Опишите состояние / износ / дефекты\n"
+        "Введите 'отмена' для прерывания",
+        parse_mode='HTML'
     )
     await state.set_state(SubmitItemStates.waiting_description)
 
@@ -76,8 +121,28 @@ async def process_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text.strip())
 
     await message.answer(
-        "💰 Введите стоимость за комплект (число в рублях)\n"
-        "Введите 'отмена' чтобы прервать операцию"
+        "<b>🔢 Введите количество</b>\n\n"
+        "Укажите, сколько единиц товара вы хотите предложить\n"
+        "Например: <code>4</code>\n\n"
+        "Введите <code>отмена</code>, чтобы прервать операцию",
+        parse_mode="HTML"
+    )
+    await state.set_state(SubmitItemStates.waiting_amount)
+
+
+@user_router.message(SubmitItemStates.waiting_amount)
+async def process_amount(message: Message, state: FSMContext):
+    text = message.text.strip().lower()
+    if not text.isdigit():
+        await message.answer("⚠️ Введите корректное количество или 'отмена' для выхода.")
+        return
+
+    await state.update_data(amount=int(text))
+
+    await message.answer(
+        "💰 Введите цену в рублях (только цифры)\n"
+        "Пример: <code>15000</code>",
+        parse_mode='HTML'
     )
     await state.set_state(SubmitItemStates.waiting_price)
 
@@ -92,7 +157,7 @@ async def process_price(message: Message, state: FSMContext):
     await state.update_data(price=int(text))
 
     await message.answer(
-        "📸 Теперь отправьте фотографии\nПосле отправки нажмите 'Готово' на клавиатуре",
+        "📸 Теперь отправьте фотографии\nДождитесь полной загрузки изображений и нажмите '✅ Готово' на клавиатуре",
         parse_mode='HTML',
         reply_markup=catalog_kb.success_upload_picture
     )
@@ -131,12 +196,21 @@ async def preview_submission(message: Message, state: FSMContext):
     type_label = "Б/У Шины" if data["type_id"] == 1 else "Б/У Диски"
 
     caption = (
-        f"<b>📦 Предпросмотр позиции</b>\n\n"
-        f"<b>🛠 Тип:</b> {type_label}\n"
-        f"<b>📏 Диаметр:</b> {category.value}\n"
-        f"<b>🏷 Бренд:</b> {data['brand']}\n"
-        f"<b>📝 Описание:</b> {data['description']}\n"
-        f"<b>💰 Цена:</b> {data['price']} ₽"
+        f"<b>📦 ПРЕДПРОСМОТР ПОЗИЦИИ</b>\n\n"
+        f"🔹 <b>Тип:</b> {type_label}\n"
+        f"🔹 <b>Диаметр:</b> {category.value}\n"
+    )
+
+    if data["type_id"] == 1 and "season" in data:
+        emoji = "☀️" if data["season"] == "summer" else "❄️"
+        caption += f"<b>🔹 Сезон:</b> {emoji} { 'Лето' if data['season'] == 'summer' else 'Зима' }\n"
+
+    caption += (
+        f"🔹 <b>Бренд:</b> {data['brand']}\n"
+        f"🔹 <b>Параметры:</b> {data['params']}\n"
+        f"🔹 <b>Описание:</b>\n{data['description']}\n\n"
+        f"📦 <b>Количество:</b> {data['amount']} шт.\n"
+        f"💰 <b>Цена:</b> {data['price']} ₽"
     )
 
     media = MediaGroupBuilder()
@@ -174,11 +248,13 @@ async def confirm_submission(callback: CallbackQuery, state: FSMContext):
 
     caption = (
         f"<b>📦 Новая заявка от клиента</b>\n\n"
-        f"<b>🛠 Тип:</b> {type_label}\n"
-        f"<b>📏 Диаметр:</b> {category.value}\n"
-        f"<b>🏷 Бренд:</b> {data['brand']}\n"
-        f"<b>📝 Описание:</b> {data['description']}\n"
-        f"<b>💰 Цена:</b> {data['price']} ₽\n\n"
+        f"🔹 <b>Тип:</b> {type_label}\n"
+        f"🔹 <b>Диаметр:</b> {category.value}\n"
+        f"🔹 <b>Бренд:</b> {data['brand']}\n"
+        f"🔹 <b>Параметры:</b> {data['params']}\n"
+        f"🔹 <b>Описание:</b>\n{data['description']}\n"
+        f"🔹 <b>Количество:</b> {data['amount']} шт.\n"
+        f"💰 <b>Цена:</b> {data['price']} ₽\n\n"
         f"📱 <b>Номер клиента:</b> {user.mobile_phone}"
     )
 
@@ -210,15 +286,17 @@ async def handle_submit_admin_action(callback: CallbackQuery):
     _, action, user_id_str = callback.data.split(":")
     telegram_user_id = int(user_id_str)
 
+    user = f"@{callback.from_user.username}" if callback.from_user.username else callback.from_user.id
+
     if action == "yes":
-        text = f"✅ Пользователь: {callback.from_user.username} пригласил клиента"
+        text = f"✅ Пользователь: {user} пригласил клиента"
         user_message = (
             "🎉 Ваша заявка одобрена!\n\n"
             "📍 Ждем вас в рабочее время по адресу:\n"
             "г. Тюмень, ул. Правды 64А (Шиномарт)"
         )
     elif action == "no":
-        text = f"❌ Пользователь: {callback.first_name} отклонил клиенту"
+        text = f"❌ Пользователь: {user} отклонил клиенту"
         user_message = (
             "😔 К сожалению, ваша заявка была отклонена.\n"
             "Вы можете попробовать снова позже"

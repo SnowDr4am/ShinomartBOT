@@ -68,6 +68,14 @@ async def get_item_keyboard(
     builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data=f"catalog:{type_id}"))
     return builder.as_markup()
 
+
+user_season_view = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="☀️ Летняя", callback_data='submit_item_season:summer')],
+    [InlineKeyboardButton(text="❄️ Зимняя", callback_data='submit_item_season:winter')],
+    [InlineKeyboardButton(text="🌦 Всесезон", callback_data='submit_item_season:allseason')],
+])
+
+
 async def get_submit_radius_keyboard(categories: List[Category], type_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 

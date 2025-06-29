@@ -11,7 +11,7 @@ from aiogram.utils.media_group import MediaGroupBuilder
 from .utils import *
 
 
-@user_router.callback_query(F.data.startswith("catalog"))
+@user_router.callback_query(F.data.startswith("catalog:"))
 async def view_catalog(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     category, type_id = await get_category(int(callback.data.split(":")[1]))
@@ -74,7 +74,9 @@ async def show_item_card(callback: CallbackQuery, state: FSMContext):
     price = item.meta_data.get("price", "Цена не указана")
     description = item.meta_data.get("description", "Описание отсутствует")
     photos = item.meta_data.get("photos", [])
-    season = item.meta_data.get("season")  # если есть
+    season = item.meta_data.get("season")
+    params = item.meta_data.get("params", "Не указаны")
+    amount = item.meta_data.get("amount", "Не указано")
 
     season_emoji = {
         "summer": "☀️",
@@ -84,10 +86,12 @@ async def show_item_card(callback: CallbackQuery, state: FSMContext):
 
     caption = (
         f"<b>{season_emoji} {item.value}</b>\n\n"
-        f"<b>Описание:</b>\n{description or '— отсутствует'}\n\n"
+        f"🔧 <b>Параметры:</b> {params}\n\n"
+        f"📝 <b>Описание:</b>\n{description or '— отсутствует'}\n\n"
+        f"📦 <b>Количество:</b> {amount} шт.\n\n"
         f"💰 <b>Цена:</b> {price} ₽\n\n"
-        f"📍 Для покупки обращайтесь к нам — всегда рады помочь!\n"
-        f"☎️ Контакты и подробности в меню"
+        f"📍 <b>Для покупки обращайтесь к нам — всегда рады помочь!</b>\n"
+        f"☎️ Контакты и подробности — в меню"
     )
 
     media = MediaGroupBuilder()
