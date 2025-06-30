@@ -13,6 +13,7 @@ class CreateItemStates(StatesGroup):
     waiting_params = State()
     waiting_description = State()
     waiting_amount = State()
+    waiting_purchase_price = State()
     waiting_price = State()
     waiting_picture = State()
 

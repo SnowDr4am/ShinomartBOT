@@ -57,6 +57,7 @@ async def view_item_history(callback: CallbackQuery):
     item = await ItemService.get_item_by_id(item_id)
 
     price = item.meta_data.get("price", "Цена не указана")
+    purchase_price = item.meta_data.get("purchase_price", "Цена не указана")
     description = item.meta_data.get("description", "Описание отсутствует")
     photos = item.meta_data.get("photos", [])
     season = item.meta_data.get("season")
@@ -76,6 +77,7 @@ async def view_item_history(callback: CallbackQuery):
         f"🔧 <b>Параметры:</b> {params}\n\n"
         f"📝 <b>Описание:</b>\n{description or '— отсутствует'}\n\n"
         f"📦 <b>Количество:</b> {amount} шт.\n"
+        f"<b>💸 Цена выкупа:</b> {purchase_price}\n"
         f"💰 <b>Цена продажи:</b> {price} ₽\n\n"
         f"👤 <b>Продал:</b> {worker}\n"
         f"📅 <b>Дата продажи:</b> {sold_date}"

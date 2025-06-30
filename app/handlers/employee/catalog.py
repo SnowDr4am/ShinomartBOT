@@ -149,7 +149,24 @@ async def process_amount(message: Message, state: FSMContext):
     await state.update_data(amount=int(text))
 
     await message.answer(
-        "💰 Введите цену в рублях (только цифры)\n"
+        "💰 Введите <b>цену выкупа</b> в рублях (только цифры)\n"
+        "Пример: <code>10000</code>",
+        parse_mode='HTML'
+    )
+    await state.set_state(CreateItemStates.waiting_purchase_price)
+
+
+@employee_router.message(CreateItemStates.waiting_purchase_price)
+async def process_price(message: Message, state: FSMContext):
+    text = message.text.strip()
+
+    if not text.isdigit():
+        await message.answer("⚠️ Введите только число — цена в рублях.")
+        return
+
+    await state.update_data(purchase_price=int(text))
+    await message.answer(
+        "💰 Введите <b>цену продажи</b> в рублях (только цифры)\n"
         "Пример: <code>15000</code>",
         parse_mode='HTML'
     )
@@ -216,11 +233,12 @@ async def preview_create_employee(message: Message, state: FSMContext):
         caption += f"<b>🗓 Сезон:</b> {emoji} { 'Лето' if data['season'] == 'summer' else 'Зима' }\n"
 
     caption += (
-        f"<b>🏷 Бренд:</b> {data['brand']}\n"
-        f"🔹 <b>Параметры:</b> {data['params']}\n"
-        f"<b>📝 Описание:</b> {data['description']}\n"
-        f"📦 <b>Количество:</b> {data['amount']} шт.\n"
-        f"<b>💰 Цена:</b> {data['price']} ₽"
+        f"<b>🏷 Бренд:</b> <code>{data['brand']}</code>\n"
+        f"<b>🔹 Параметры:</b> <code>{data['params']}</code>\n"
+        f"<b>📝 Описание:</b>\n<code>{data['description']}</code>\n"
+        f"<b>📦 Количество:</b> <code>{data['amount']} шт.</code>\n\n"
+        f"<b>💸 Цена выкупа:</b> <code>{data['purchase_price']} ₽</code>\n"
+        f"<b>💰 Цена продажи:</b> <code>{data['price']} ₽</code>"
     )
 
     photos = data.get("photos", [])
@@ -256,6 +274,7 @@ async def confirm_employee_create(callback: CallbackQuery, state: FSMContext):
         params=data["params"],
         description=data["description"],
         amount=data['amount'],
+        purchase_price=data['purchase_price'],
         price=data["price"],
         photos=data["photos"],
         season=data.get("season")

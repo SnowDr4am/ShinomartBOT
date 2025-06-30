@@ -76,6 +76,7 @@ async def create_item_from_employee(
     params: str,
     description: str,
     amount: int,
+    purchase_price: int,
     price: int,
     photos: list[str],
     season: str = None
@@ -85,6 +86,7 @@ async def create_item_from_employee(
             "params": params,
             "description": description,
             "amount": amount,
+            "purchase_price": purchase_price,
             "price": price,
             "photos": photos
         }
