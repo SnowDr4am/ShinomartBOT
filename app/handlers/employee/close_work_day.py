@@ -35,6 +35,22 @@ def float_only(func):
 @employee_router.message(F.text=='✅ Завершить смену')
 async def start_close_work_day(message: Message, state: FSMContext):
     await message.answer(
+        f"💠 <b>Введите сумму в Карте CRM</b>\n"
+        f"━━━━━━━━━━━━━━━━\n"
+        f"Введите общую сумму, которая указана в карте CRM",
+        parse_mode='HTML'
+    )
+    await state.set_state(EmployeeStates.close_waiting_amount_crm)
+
+
+@employee_router.message(EmployeeStates.close_waiting_amount_crm)
+@cancel_action
+@float_only
+async def handle_amount_crm(message: Message, state: FSMContext):
+    value_crm = float(message.text.replace(",", "."))
+    await state.update_data(value_crm=value_crm)
+
+    await message.answer(
         f"💠 <b>Введите сумму транзакций по СБП</b>\n"
         f"━━━━━━━━━━━━━━━━\n"
         f"Введите общую сумму переводов по системе быстрых платежей (СБП)",
@@ -51,7 +67,7 @@ async def handle_amount_spb(message: Message, state: FSMContext):
     await state.update_data(value_sbp=value_sbp)
 
     await message.answer(
-        f"💳 <b>Введите сумму транзакций по безналу</b>\n"
+        f"💳 <b>Введите сумму транзакций по карте</b>\n"
         f"━━━━━━━━━━━━━━━━\n"
         f"Укажите сумму по эквайрингу / терминалу",
         parse_mode='HTML'
@@ -65,6 +81,35 @@ async def handle_amount_spb(message: Message, state: FSMContext):
 async def handle_amount_cashless(message: Message, state: FSMContext):
     value_cashless = float(message.text.replace(",", "."))
     await state.update_data(value_cashless=value_cashless)
+
+    data = await state.get_data()
+    value_crm, value_sbp = float(data.get("value_crm")), float(data.get("value_sbp"))
+
+    diff = value_crm - (value_sbp + value_cashless)
+    if abs(diff) > 0.01:
+        await state.set_state(EmployeeStates.close_waiting_comment)
+        return await message.answer(
+            f"⚠️ <b>Несоответствие суммы!</b>\n"
+            f"━━━━━━━━━━━━━━━━\n"
+            f"Сумма в <b>CRM</b> не совпадает с указанными суммами по <b>СБП</b> и <b>эквайрингу</b>\n\n"
+            f"📝 <b>Напишите причину расхождения:</b>",
+            parse_mode='HTML'
+        )
+
+    await message.answer(
+        f"💵 <b>Введите сумму транзакций по наличке</b>\n"
+        f"━━━━━━━━━━━━━━━━\n"
+        f"Укажите общую сумму по наличным расчётам",
+        parse_mode='HTML'
+    )
+    await state.set_state(EmployeeStates.close_waiting_amount_cash)
+
+
+@employee_router.message(EmployeeStates.close_waiting_comment)
+@cancel_action
+async def handle_comment(message: Message, state: FSMContext):
+    comment = message.text
+    await state.update_data(comment=comment)
 
     await message.answer(
         f"💵 <b>Введите сумму транзакций по наличке</b>\n"
@@ -83,9 +128,9 @@ async def handle_amount_cash(message: Message, state: FSMContext):
     await state.update_data(value_cash=value_cash)
 
     await message.answer(
-        f"💵 <b>Введите сумму транзакций переводов на карту</b>\n"
+        f"💵 <b>Введите сумму транзакций переводов</b>\n"
         f"━━━━━━━━━━━━━━━━\n"
-        f"Укажите общую сумму переводов на карту",
+        f"Укажите общую сумму переводов",
         parse_mode='HTML'
     )
     await state.set_state(EmployeeStates.close_waiting_amount_transfer)
@@ -151,8 +196,13 @@ async def handle_complete_close_work_day(callback: CallbackQuery, state: FSMCont
 
     data = await state.get_data()
 
-    value_sbp, value_cashless, value_cash, value_transfers = float(data.get("value_sbp")), float(data.get("value_cashless")), float(data.get("value_cash")), float(data.get("value_transfers"))
+    value_crm = float(data.get("value_crm"))
+    value_sbp = float(data.get("value_sbp"))
+    value_cashless = float(data.get("value_cashless"))
+    value_cash = float(data.get("value_cash"))
+    value_transfers = float(data.get("value_transfers"))
     photos = data.get("photos", [])[:10]
+    comment = data.get("comment", "")
 
     worker = await rq.get_user_by_tg_id(callback.from_user.id)
     tg_worker = callback.from_user
@@ -163,6 +213,8 @@ async def handle_complete_close_work_day(callback: CallbackQuery, state: FSMCont
     elif tg_worker:
         tg_link = f"<a href='tg://user?id={tg_worker.id}'>Профиль</a>"
 
+    fmt = lambda x: f"{x:,.2f}".replace(",", " ").replace(".", ",")
+
     message_text = (
         f"💼 <b>Завершение смены</b>\n"
         f"━━━━━━━━━━━━━━━━\n\n"
@@ -171,13 +223,23 @@ async def handle_complete_close_work_day(callback: CallbackQuery, state: FSMCont
         f"• Имя: {worker.name}\n"
         f"• Telegram: {tg_link}\n\n"
 
-        f"💰 <b>Финансовый отчет:</b>\n"
-        f"• Сумма по СБП: {value_sbp}\n"
-        f"• Сумма по безналу: {value_cashless}\n"
-        f"• Сумма переводов на карту: {value_cashless}\n"
-        f"• Сумма по наличке: {value_cash}\n"
+        f"💰 <b>Финансовый отчёт:</b>\n"
+        f"• Сумма по CRM: {fmt(value_crm)}\n"
+        f"• Сумма по СБП: {fmt(value_sbp)}\n"
+        f"• Сумма по безналу: {fmt(value_cashless)}\n\n"
+        f"• Сумма по переводам: {fmt(value_transfers)}\n"
+        f"• Сумма по наличке: {fmt(value_cash)}\n\n"
     )
 
+    if comment:
+        difference = value_crm - (value_sbp+value_cashless)
+
+        message_text += (
+            f"⚠️ <b>Замечено расхождение в суммах</b>\n"
+            f"• Разница: {fmt(difference)}\n"
+            f"• Комментарий: {comment}"
+        )
+    OWNER = 728303180
     bot = callback.message.bot
     if photos:
         media = [InputMediaPhoto(media=photos[0], caption=message_text, parse_mode='HTML')]
