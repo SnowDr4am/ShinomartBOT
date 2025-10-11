@@ -239,7 +239,7 @@ async def handle_complete_close_work_day(callback: CallbackQuery, state: FSMCont
             f"• Разница: {fmt(difference)}\n"
             f"• Комментарий: {comment}"
         )
-    OWNER = 728303180
+
     bot = callback.message.bot
     if photos:
         media = [InputMediaPhoto(media=photos[0], caption=message_text, parse_mode='HTML')]
