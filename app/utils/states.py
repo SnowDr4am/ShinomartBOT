@@ -20,3 +20,10 @@ class CreateItemStates(StatesGroup):
 class EditItemStates(StatesGroup):
     waiting_field_input = State()
     waiting_photos = State()
+
+
+class EmployeeStates(StatesGroup):
+    close_waiting_amount_sbp = State()
+    close_waiting_amount_cash = State()
+    close_waiting_amount_cashless = State()
+    close_waiting_picture = State()

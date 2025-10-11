@@ -10,21 +10,20 @@ from app.database.seed import seed
 
 from app.handlers.user import user, registration, employee_assessment, generate_qr, voting_approved, promotions, feedback
 from app.handlers.user.catalog import catalog, submit_item
-from app.handlers.employee import employee, catalog, catalog_edit
+from app.handlers.employee import employee, catalog, catalog_edit, close_work_day
 from app.handlers.admin import admin, bonus_system, personal, send_message, catalog
 from app.handlers.admin.promotions import promotion_edit, promotion_add
 
 async def main():
     await async_main()
     await seed()
-    await setup_middleware()
+    routers = await setup_middleware()
 
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher()
 
-    dp.include_router(user_router)
-    dp.include_router(admin_router)
-    dp.include_router(employee_router)
+    for router in routers:
+        dp.include_router(router)
 
     scheduler = await setup_scheduler(bot)
 
