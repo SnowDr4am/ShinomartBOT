@@ -26,4 +26,5 @@ class EmployeeStates(StatesGroup):
     close_waiting_amount_sbp = State()
     close_waiting_amount_cash = State()
     close_waiting_amount_cashless = State()
+    close_waiting_amount_transfer = State()
     close_waiting_picture = State()

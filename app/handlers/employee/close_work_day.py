@@ -80,8 +80,24 @@ async def handle_amount_cashless(message: Message, state: FSMContext):
 @float_only
 async def handle_amount_cash(message: Message, state: FSMContext):
     value_cash = float(message.text.replace(",", "."))
+    await state.update_data(value_cash=value_cash)
+
+    await message.answer(
+        f"💵 <b>Введите сумму транзакций переводов на карту</b>\n"
+        f"━━━━━━━━━━━━━━━━\n"
+        f"Укажите общую сумму переводов на карту",
+        parse_mode='HTML'
+    )
+    await state.set_state(EmployeeStates.close_waiting_amount_transfer)
+
+
+@employee_router.message(EmployeeStates.close_waiting_amount_transfer)
+@cancel_action
+@float_only
+async def handle_amount_transfers(message: Message, state: FSMContext):
+    value_transfers = float(message.text.replace(",", "."))
     await state.update_data(
-        value_cash=value_cash,
+        value_transfers=value_transfers,
         photos=[]
     )
 
@@ -135,7 +151,7 @@ async def handle_complete_close_work_day(callback: CallbackQuery, state: FSMCont
 
     data = await state.get_data()
 
-    value_sbp, value_cashless, value_cash = float(data.get("value_sbp")), float(data.get("value_cashless")), float(data.get("value_cash"))
+    value_sbp, value_cashless, value_cash, value_transfers = float(data.get("value_sbp")), float(data.get("value_cashless")), float(data.get("value_cash")), float(data.get("value_transfers"))
     photos = data.get("photos", [])[:10]
 
     worker = await rq.get_user_by_tg_id(callback.from_user.id)
@@ -158,6 +174,7 @@ async def handle_complete_close_work_day(callback: CallbackQuery, state: FSMCont
         f"💰 <b>Финансовый отчет:</b>\n"
         f"• Сумма по СБП: {value_sbp}\n"
         f"• Сумма по безналу: {value_cashless}\n"
+        f"• Сумма переводов на карту: {value_cashless}\n"
         f"• Сумма по наличке: {value_cash}\n"
     )
 
