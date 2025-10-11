@@ -51,22 +51,6 @@ async def handle_amount_crm(message: Message, state: FSMContext):
     await state.update_data(value_crm=value_crm)
 
     await message.answer(
-        f"💠 <b>Введите сумму транзакций по СБП</b>\n"
-        f"━━━━━━━━━━━━━━━━\n"
-        f"Введите общую сумму переводов по системе быстрых платежей (СБП)",
-        parse_mode='HTML'
-    )
-    await state.set_state(EmployeeStates.close_waiting_amount_sbp)
-
-
-@employee_router.message(EmployeeStates.close_waiting_amount_sbp)
-@cancel_action
-@float_only
-async def handle_amount_spb(message: Message, state: FSMContext):
-    value_sbp = float(message.text.replace(",", "."))
-    await state.update_data(value_sbp=value_sbp)
-
-    await message.answer(
         f"💳 <b>Введите сумму транзакций по карте</b>\n"
         f"━━━━━━━━━━━━━━━━\n"
         f"Укажите сумму по эквайрингу / терминалу",
@@ -82,8 +66,24 @@ async def handle_amount_cashless(message: Message, state: FSMContext):
     value_cashless = float(message.text.replace(",", "."))
     await state.update_data(value_cashless=value_cashless)
 
+    await message.answer(
+        f"💠 <b>Введите сумму транзакций по СБП</b>\n"
+        f"━━━━━━━━━━━━━━━━\n"
+        f"Введите общую сумму переводов по системе быстрых платежей (СБП)",
+        parse_mode='HTML'
+    )
+    await state.set_state(EmployeeStates.close_waiting_amount_sbp)
+
+
+@employee_router.message(EmployeeStates.close_waiting_amount_sbp)
+@cancel_action
+@float_only
+async def handle_amount_spb(message: Message, state: FSMContext):
+    value_sbp = float(message.text.replace(",", "."))
+    await state.update_data(value_sbp=value_sbp)
+
     data = await state.get_data()
-    value_crm, value_sbp = float(data.get("value_crm")), float(data.get("value_sbp"))
+    value_crm, value_cashless = float(data.get("value_crm")), float(data.get("value_cashless"))
 
     diff = value_crm - (value_sbp + value_cashless)
     if abs(diff) > 0.01:
@@ -91,18 +91,18 @@ async def handle_amount_cashless(message: Message, state: FSMContext):
         return await message.answer(
             f"⚠️ <b>Несоответствие суммы!</b>\n"
             f"━━━━━━━━━━━━━━━━\n"
-            f"Сумма в <b>CRM</b> не совпадает с указанными суммами по <b>СБП</b> и <b>эквайрингу</b>\n\n"
+            f"Сумма в <b>CRM</b> не совпадает с указанными суммами по <b>эквайрингу</b> и <b>СБП</b>\n\n"
             f"📝 <b>Напишите причину расхождения:</b>",
             parse_mode='HTML'
         )
 
     await message.answer(
-        f"💵 <b>Введите сумму транзакций по наличке</b>\n"
+        f"💵 <b>Введите сумму транзакций переводов</b>\n"
         f"━━━━━━━━━━━━━━━━\n"
-        f"Укажите общую сумму по наличным расчётам",
+        f"Укажите общую сумму переводов",
         parse_mode='HTML'
     )
-    await state.set_state(EmployeeStates.close_waiting_amount_cash)
+    await state.set_state(EmployeeStates.close_waiting_amount_transfer)
 
 
 @employee_router.message(EmployeeStates.close_waiting_comment)
@@ -110,22 +110,6 @@ async def handle_amount_cashless(message: Message, state: FSMContext):
 async def handle_comment(message: Message, state: FSMContext):
     comment = message.text
     await state.update_data(comment=comment)
-
-    await message.answer(
-        f"💵 <b>Введите сумму транзакций по наличке</b>\n"
-        f"━━━━━━━━━━━━━━━━\n"
-        f"Укажите общую сумму по наличным расчётам",
-        parse_mode='HTML'
-    )
-    await state.set_state(EmployeeStates.close_waiting_amount_cash)
-
-
-@employee_router.message(EmployeeStates.close_waiting_amount_cash)
-@cancel_action
-@float_only
-async def handle_amount_cash(message: Message, state: FSMContext):
-    value_cash = float(message.text.replace(",", "."))
-    await state.update_data(value_cash=value_cash)
 
     await message.answer(
         f"💵 <b>Введите сумму транзакций переводов</b>\n"
@@ -141,10 +125,23 @@ async def handle_amount_cash(message: Message, state: FSMContext):
 @float_only
 async def handle_amount_transfers(message: Message, state: FSMContext):
     value_transfers = float(message.text.replace(",", "."))
-    await state.update_data(
-        value_transfers=value_transfers,
-        photos=[]
+    await state.update_data(value_transfers=value_transfers)
+
+    await message.answer(
+        f"💵 <b>Введите сумму транзакций по наличке</b>\n"
+        f"━━━━━━━━━━━━━━━━\n"
+        f"Укажите общую сумму по наличным расчётам",
+        parse_mode='HTML'
     )
+    await state.set_state(EmployeeStates.close_waiting_amount_cash)
+
+
+@employee_router.message(EmployeeStates.close_waiting_amount_cash)
+@cancel_action
+@float_only
+async def handle_amount_cash(message: Message, state: FSMContext):
+    value_cash = float(message.text.replace(",", "."))
+    await state.update_data(value_cash=value_cash, photos=[])
 
     await message.answer(
         f"📸 <b>Прикрепите фотоотчёт</b>\n"
@@ -225,8 +222,8 @@ async def handle_complete_close_work_day(callback: CallbackQuery, state: FSMCont
 
         f"💰 <b>Финансовый отчёт:</b>\n"
         f"• Сумма по CRM: {fmt(value_crm)}\n"
-        f"• Сумма по СБП: {fmt(value_sbp)}\n"
-        f"• Сумма по безналу: {fmt(value_cashless)}\n\n"
+        f"• Сумма по безналу: {fmt(value_cashless)}\n"
+        f"• Сумма по СБП: {fmt(value_sbp)}\n\n"
         f"• Сумма по переводам: {fmt(value_transfers)}\n"
         f"• Сумма по наличке: {fmt(value_cash)}\n\n"
     )
