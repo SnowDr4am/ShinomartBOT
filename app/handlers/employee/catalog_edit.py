@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from aiofiles.os import replace
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 

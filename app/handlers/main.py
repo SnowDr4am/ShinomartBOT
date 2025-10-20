@@ -1,5 +1,5 @@
 from aiogram import Router
-from app.middlewares.middleware import AdminMiddleware, EmployeeMiddleware, CancelMiddleware, MediaGroupMiddleware
+from app.middlewares import AdminMiddleware, EmployeeMiddleware, CancelMiddleware, MediaGroupMiddleware
 
 
 user_router = Router(name='user_router')
@@ -25,7 +25,7 @@ async def setup_custom_middleware():
     media_router.callback_query.middleware(MediaGroupMiddleware())
 
 
-async def setup_middleware():
+async def setup_routers():
     all_routers = [
         user_router, admin_router, employee_router, ai_router, media_router
     ]

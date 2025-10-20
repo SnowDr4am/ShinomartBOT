@@ -3,7 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from aiogram.utils.media_group import MediaGroupBuilder
 
-from app.servers.config import TIRES_AND_DISCS_CHANNEL
+from config import TIRES_AND_DISCS_CHANNEL
 from app.handlers.main import user_router, admin_router
 import app.database.ItemService as ItemService
 import app.database.requests as rq

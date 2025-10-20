@@ -5,7 +5,7 @@ import app.database.admin_requests as rq
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from app.handlers.admin.admin import back_to_main, cmd_job
-from app.servers.config import OWNER
+from config import OWNER
 import app.keyboards.admin.admin as kb
 from datetime import datetime
 

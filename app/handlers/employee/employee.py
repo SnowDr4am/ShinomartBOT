@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import StatesGroup, State
 
-from app.servers.config import CHANNEL_ID
+from config import CHANNEL_ID
 from app.handlers.main import employee_router
 import app.keyboards.employee.employee as kb
 import app.database.requests as rq

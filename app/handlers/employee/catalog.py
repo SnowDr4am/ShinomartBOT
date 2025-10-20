@@ -3,12 +3,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from aiogram.utils.media_group import MediaGroupBuilder
 
-from app.handlers.main import user_router, admin_router, employee_router
+from app.handlers.main import user_router, employee_router
 import app.database.ItemService as ItemService
 import app.keyboards.employee.employee as kb
 import app.keyboards.employee.catalog as catalog_kb
 from app.utils.states import CreateItemStates
-from app.handlers.user.user import main_menu
 
 from app.handlers.user.catalog.utils import get_category
 

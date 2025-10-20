@@ -6,7 +6,7 @@ from app.handlers.main import user_router, admin_router
 import app.keyboards.user.user as kb
 import app.database.requests as rq
 
-from app.servers.config import OWNER
+from config import OWNER
 
 class VotingApproved(StatesGroup):
     waiting_picture = State()

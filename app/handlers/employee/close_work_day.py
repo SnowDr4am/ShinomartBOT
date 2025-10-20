@@ -7,7 +7,7 @@ from aiogram.types import CallbackQuery, Message, InputMediaPhoto
 from ..main import employee_router, media_router
 from app.utils.states import EmployeeStates
 import app.keyboards.employee.close_work_day as kb
-from app.servers.config import OWNER
+from config import OWNER
 import app.database.requests as rq
 
 

@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from app.handlers.employee.employee import handle_phone_selection_by_qr
 from app.handlers.main import user_router
-from app.servers.config import PHONE_NUMBER
+from config import PHONE_NUMBER
 import app.keyboards.user.user as kb
 import app.database.requests as rq
 
