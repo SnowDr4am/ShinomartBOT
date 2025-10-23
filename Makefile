@@ -1,15 +1,18 @@
 # --- Settings ---
-COMPOSE := $(shell command -v docker-compose >/dev/null 2>&1 && echo docker-compose || echo docker compose)
+COMPOSE_FILE ?= docker-compose.yml
 
 # --- Targets ---
 up:
-	$(COMPOSE) up -d
+	docker compose -f $(COMPOSE_FILE) up -d
 
 down:
-	$(COMPOSE) down
+	docker compose -f $(COMPOSE_FILE) down -v
+
+ps:
+	docker compose -f $(COMPOSE_FILE) ps
 
 stop:
-	$(COMPOSE) stop
+	docker compose -f $(COMPOSE_FILE) stop
 
 restart:
-	$(COMPOSE) restart
+	docker compose -f $(COMPOSE_FILE) restart
