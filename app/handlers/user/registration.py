@@ -9,7 +9,7 @@ from app.handlers.user.user import cmd_start
 from app.handlers.main import user_router
 import app.keyboards.user.user as kb
 import app.database.requests as rq
-from app.servers.config import CHANNEL_ID
+from config import CHANNEL_ID
 
 
 class GetUserInfo(StatesGroup):

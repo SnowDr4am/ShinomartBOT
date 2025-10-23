@@ -3,14 +3,20 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from app.handlers.employee.employee import handle_phone_selection_by_qr
-from app.handlers.main import user_router
-from app.servers.config import PHONE_NUMBER
+from app.handlers.main import user_router, priority_router
+from config import PHONE_NUMBER
 import app.keyboards.user.user as kb
 import app.database.requests as rq
 
 
-@user_router.message(CommandStart())
+@priority_router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
+    try:
+        await state.clear()
+        await message.delete()
+    except Exception:
+        pass
+
     if message.text:
         phone_number = message.text.split(' ')[1] if len(message.text.split(' ')) > 1 else None
     else:
@@ -53,7 +59,7 @@ async def cmd_start(message: Message, state: FSMContext):
     )
 
 
-@user_router.callback_query(F.data == 'main_menu')
+@priority_router.callback_query(F.data == 'main_menu')
 async def main_menu(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.answer("")

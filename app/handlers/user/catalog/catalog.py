@@ -113,3 +113,10 @@ async def show_item_card(callback: CallbackQuery, state: FSMContext):
 @user_router.callback_query(F.data == "ignore")
 async def ignore_handler(callback: CallbackQuery):
     await callback.answer()
+
+@user_router.callback_query(F.data == "delete-message")
+async def handle_delete_message(callback: CallbackQuery):
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass

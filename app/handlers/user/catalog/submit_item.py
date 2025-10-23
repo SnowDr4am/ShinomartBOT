@@ -3,20 +3,20 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from aiogram.utils.media_group import MediaGroupBuilder
 
-from app.servers.config import TIRES_AND_DISCS_CHANNEL
+from config import TIRES_AND_DISCS_CHANNEL
 from app.handlers.main import user_router, admin_router
 import app.database.ItemService as ItemService
 import app.database.requests as rq
 import app.keyboards.user.catalog as catalog_kb
+import app.keyboards.user.user as user_kb
 from app.utils.states import SubmitItemStates
-from app.handlers.user.user import main_menu
 
 from .utils import *
 
 
 @user_router.callback_query(F.data.startswith("submit_item:"))
 async def start_submit_new_item(callback: CallbackQuery):
-    await callback.answer()
+    await callback.answer(f"Принимаются шины до 3-х лет.\nСтарше не предлагать", show_alert=True)
 
     type_id = int(callback.data.split(":")[1])
     category_name, _ = await get_category(type_id)
@@ -235,8 +235,14 @@ async def confirm_submission(callback: CallbackQuery, state: FSMContext):
     params = callback.data.split(":")[1]
     if params == 'no':
         await state.clear()
-        await callback.message.answer(f"❌ Операция отмена")
-        await main_menu(callback, state)
+        await callback.answer("")
+        await callback.message.edit_text(
+            text="<b>Привет, друг!</b>\n\n"
+                "<b>Я — твой личный помощник в Шиномарте</b> 🚗💨\n\n"
+                "Здесь ты можешь получить скидки, акции и все, что нужно для твоего удобства.\n\n"
+                "Выбери нужный раздел из меню ниже 👇",
+            parse_mode="HTML", reply_markup=user_kb.main_menu
+        )
         return
 
     data = await state.get_data()

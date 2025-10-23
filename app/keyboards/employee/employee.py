@@ -6,6 +6,7 @@ main_menu = ReplyKeyboardMarkup(
         [KeyboardButton(text='💳 Новая транзакция')],
         [KeyboardButton(text='➕ Добавить Б/У шины или диски')],
         [KeyboardButton(text='✅ Завершить смену')],
+        [KeyboardButton(text='📦 Хранение шин')],
         [KeyboardButton(text='❌ Отмена')]
     ],
     resize_keyboard=True

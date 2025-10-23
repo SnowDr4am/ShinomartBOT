@@ -7,7 +7,7 @@ from app.handlers.user.user import cmd_start
 import app.keyboards.user.user as kb
 import app.database.requests as rq
 
-from app.servers.config import OWNER
+from config import OWNER
 
 class FeedbackState(StatesGroup):
     waiting_answer = State()

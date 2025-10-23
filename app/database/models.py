@@ -172,6 +172,32 @@ class Item(Base):
     category = relationship("Category", back_populates="items")
 
 
+class StorageCell(Base):
+    __tablename__ = "storage_cells"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=func.now())
+
+    cell_storage = relationship("CellStorage", back_populates="storage_cell", uselist=False)
+
+
+class CellStorage(Base):
+    __tablename__ = "cell_storages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cell_id: Mapped[int] = mapped_column(ForeignKey("storage_cells.id"), nullable=False)
+    worker_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    storage_type: Mapped[str] = mapped_column(String, nullable=False)  # Шины/Шины с дисками
+    price: Mapped[float] = mapped_column(Float, nullable=False)
+    description: Mapped[str] = mapped_column(String, nullable=True)
+    scheduled_month: Mapped[datetime.date] = mapped_column(Date, nullable=False)  # До какого месяца
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=func.now())
+    meta_data: Mapped[dict] = mapped_column(JSON, default={})  # Для хранения photo_file_id
+
+    storage_cell = relationship("StorageCell", back_populates="cell_storage")
+
+
 async def async_main():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

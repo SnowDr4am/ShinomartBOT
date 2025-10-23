@@ -4,7 +4,7 @@ import pytz
 from app.database.models import async_session
 from app.database.models import User, UserBonusBalance, PurchaseHistory, BonusSystem, Review, Appointment, Settings, QRCode, VoteHistory, VipClient, Promotion
 from sqlalchemy.orm import joinedload
-from app.servers.config import ADMIN_ID
+from config import ADMIN_ID
 
 EKATERINBURG_TZ = pytz.timezone('Asia/Yekaterinburg')
 
@@ -407,6 +407,13 @@ async def get_user_by_tg_id(user_tg_id: int) -> User | None:
     async with async_session() as session:
         result = await session.execute(
             select(User).where(User.user_id == str(user_tg_id))
+        )
+        return result.scalars().first()
+
+async def get_user_by_id(user_id: int) -> User | None:
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.id == str(user_id))
         )
         return result.scalars().first()
 

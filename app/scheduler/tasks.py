@@ -5,8 +5,7 @@ import pytz
 from app.database.models import async_session, QRCode
 from sqlalchemy import delete
 import app.database.requests as rq
-import app.keyboards.user.user as kb
-from app.servers.config import CHANNEL_ID_DAILY
+from config import CHANNEL_ID_DAILY
 from datetime import datetime
 
 EKATERINBURG_TZ = pytz.timezone('Asia/Yekaterinburg')

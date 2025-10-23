@@ -33,3 +33,13 @@ class EmployeeStates(StatesGroup):
 
     close_waiting_picture = State()
     close_waiting_comment = State()
+
+
+class StorageCellStates(StatesGroup):
+    waiting_cell_count = State()
+    waiting_phone_number = State()
+    waiting_storage_type = State()
+    waiting_description = State()
+    waiting_scheduled_month = State()
+    waiting_photos = State()
+    waiting_extend_month = State()
