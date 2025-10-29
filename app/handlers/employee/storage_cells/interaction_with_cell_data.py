@@ -11,6 +11,7 @@ import app.keyboards.employee.storage_cells.interaction_with_cell_data as kb
 import app.database.StorageCellsService as storage_service
 import app.database.requests as rq
 from app.utils.word import generate_storage_word_document
+from app.utils.func import delete_message_in_state
 
 
 # ==================== Управление заполненной ячейкой ====================
@@ -71,6 +72,9 @@ async def regenerate_word_document(callback: CallbackQuery):
 async def extend_storage_period(callback: CallbackQuery, state: FSMContext):
     cell_id = int(callback.data.split(":")[1])
     await state.update_data(extend_cell_id=cell_id)
+
+    # При переходе в продление — удаляем ранее отправленные фото
+    await delete_message_in_state(callback.bot, state, callback.from_user.id, only_media=True)
 
     cell = await storage_service.get_cell(cell_id)
     scheduled_month = getattr(getattr(cell, "cell_storage", None), "scheduled_month", None)
@@ -159,11 +163,13 @@ async def process_extend_month(callback: CallbackQuery, state: FSMContext):
 # ==================== Освобождение ячейки ====================
 
 @employee_router.callback_query(F.data.startswith("storage_free:"))
-async def free_storage_cell(callback: CallbackQuery):
+async def free_storage_cell(callback: CallbackQuery, state: FSMContext):
     """Освобождение ячейки"""
     await callback.answer()
 
     cell_id = int(callback.data.split(":")[1])
+    # Перед подтверждением освобождения — удаляем фото
+    await delete_message_in_state(callback.bot, state, callback.from_user.id, only_media=True)
     keyboard = await kb.get_confirmation_keyboard("free", cell_id)
 
     await callback.message.edit_text(
@@ -214,6 +220,21 @@ async def confirm_action(callback: CallbackQuery):
                 "❌ Не удалось удалить ячейку!",
                 parse_mode="HTML",
                 reply_markup=kb.generate_simple_keyboard("Назад", "storage_open_cells")
+            )
+    elif action == "free":
+        # Освобождаем ячейку (удаляем запись хранения)
+        success = await storage_service.delete_cell_storage(cell_id)
+        if success:
+            await callback.message.edit_text(
+                f"✅ <b>Ячейка №{cell_id} освобождена!</b>",
+                parse_mode="HTML",
+                reply_markup=kb.generate_simple_keyboard("Назад", f"storage_cell:{cell_id}")
+            )
+        else:
+            await callback.message.edit_text(
+                "❌ Не удалось освободить ячейку!",
+                parse_mode="HTML",
+                reply_markup=kb.generate_simple_keyboard("Назад", f"storage_cell:{cell_id}")
             )
 
 

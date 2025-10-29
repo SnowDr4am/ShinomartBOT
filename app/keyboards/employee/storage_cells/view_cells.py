@@ -2,8 +2,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def generate_cells_keyboard(cells: list, page: int = 1) -> InlineKeyboardMarkup:
-    """Генерация клавиатуры 10x10 для ячеек"""
-    cells_per_page = 100  # 10x10
+    """Генерация клавиатуры 7x7 (49) для ячеек с пагинацией"""
+    cells_per_page = 49  # 7x7
     keyboard = []
     
     total_cells = len(cells)
@@ -13,19 +13,19 @@ def generate_cells_keyboard(cells: list, page: int = 1) -> InlineKeyboardMarkup:
     end = start + cells_per_page
     cells_on_page = cells[start:end] if cells else []
     
-    # Генерируем 10 рядов по 10 кнопок
-    for row in range(10):
+    # Генерируем 7 рядов по 7 кнопок
+    for row in range(7):
         row_buttons = []
-        for col in range(10):
-            cell_index = start + row * 10 + col
+        for col in range(7):
+            cell_index = start + row * 7 + col
             
             if cell_index < len(cells):
                 cell = cells[cell_index]
                 # Проверяем, занята ли ячейка
                 if cell.cell_storage:
-                    button_text = f"✅ {cell.id}"
+                    button_text = f"✅ {getattr(cell, 'value', None) or cell.id}"
                 else:
-                    button_text = f"{cell.id}"
+                    button_text = f"{getattr(cell, 'value', None) or cell.id}"
                 callback_data = f"storage_cell:{cell.id}"
             else:
                 # Пустая кнопка

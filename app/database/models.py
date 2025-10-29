@@ -176,6 +176,7 @@ class StorageCell(Base):
     __tablename__ = "storage_cells"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    value: Mapped[int] = mapped_column(Integer, unique=True, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=func.now())
 
     cell_storage = relationship("CellStorage", back_populates="storage_cell", uselist=False)

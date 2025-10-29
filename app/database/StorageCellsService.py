@@ -15,7 +15,7 @@ async def get_cells() -> List[StorageCell]:
         stmt = (
             select(StorageCell)
             .options(selectinload(StorageCell.cell_storage))
-            .order_by(StorageCell.id)
+            .order_by(StorageCell.value, StorageCell.id)
         )
         result = await session.execute(stmt)
         cells = result.scalars().all()
@@ -35,20 +35,38 @@ async def get_cell(cell_id: int) -> Optional[StorageCell]:
 
 
 async def create_cells(count: int) -> List[StorageCell]:
-    """Создание новых ячеек"""
+    """Создание новых ячеек с заполнением пропусков в value."""
     async with async_session() as session:
-        new_cells = []
-        for _ in range(count):
-            cell = StorageCell()
+        # Получаем существующие значения value
+        stmt_existing = select(StorageCell.value).order_by(StorageCell.value)
+        result = await session.execute(stmt_existing)
+        existing_values = [v for (v,) in result.all() if v is not None]
+
+        # Вычисляем пропуски начиная с 1
+        missing_values = []
+        expected = 1
+        for val in existing_values:
+            while expected < val and len(missing_values) < count:
+                missing_values.append(expected)
+                expected += 1
+            expected = val + 1
+
+        # Если ещё нужно, продолжаем после максимума
+        while len(missing_values) < count:
+            missing_values.append(expected)
+            expected += 1
+
+        new_cells: List[StorageCell] = []
+        for i in range(count):
+            cell = StorageCell(value=missing_values[i])
             session.add(cell)
             new_cells.append(cell)
-        
+
         await session.commit()
-        
-        # Обновляем объекты после коммита
+
         for cell in new_cells:
             await session.refresh(cell)
-        
+
         return new_cells
 
 
@@ -117,7 +135,6 @@ async def delete_storage_cell(cell_id: int) -> bool:
     if folder.is_dir():
         try:
             await asyncio.to_thread(shutil.rmtree, folder)
-            print(f"🧹 Удалена папка {folder}")
         except Exception as e:
             print(f"⚠️ Ошибка при удалении {folder}: {e}")
 
