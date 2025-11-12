@@ -78,7 +78,9 @@ async def save_or_update_cell_storage(
     price: float,
     description: str,
     scheduled_month: date,
-    meta_data: dict
+    meta_data: dict,
+    action_type: str = "handover",  # handover (сдача) или pickup (получение)
+    confirmation_status: str = "pending"
 ) -> CellStorage:
     """Обновляет или создает запись в cell_storages"""
     async with async_session() as session:
@@ -96,6 +98,8 @@ async def save_or_update_cell_storage(
             cell_storage.description = description
             cell_storage.scheduled_month = scheduled_month
             cell_storage.meta_data = meta_data
+            cell_storage.action_type = action_type
+            cell_storage.confirmation_status = confirmation_status
         else:
             # Создаем новую запись
             cell_storage = CellStorage(
@@ -106,7 +110,9 @@ async def save_or_update_cell_storage(
                 price=price,
                 description=description,
                 scheduled_month=scheduled_month,
-                meta_data=meta_data
+                meta_data=meta_data,
+                action_type=action_type,
+                confirmation_status=confirmation_status
             )
             session.add(cell_storage)
         
@@ -152,4 +158,26 @@ async def update_scheduled_month(cell_id: int, new_month: date) -> bool:
             await session.commit()
             return True
         return False
+
+
+async def update_confirmation_status(cell_storage_id: int, status: str) -> bool:
+    """Обновляет статус подтверждения"""
+    async with async_session() as session:
+        stmt = select(CellStorage).where(CellStorage.id == cell_storage_id)
+        result = await session.execute(stmt)
+        cell_storage = result.scalar_one_or_none()
+        
+        if cell_storage:
+            cell_storage.confirmation_status = status
+            await session.commit()
+            return True
+        return False
+
+
+async def get_cell_storage_by_id(cell_storage_id: int) -> Optional[CellStorage]:
+    """Получает запись хранения по ID"""
+    async with async_session() as session:
+        stmt = select(CellStorage).where(CellStorage.id == cell_storage_id)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
 

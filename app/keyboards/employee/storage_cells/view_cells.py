@@ -63,7 +63,7 @@ def build_empty_cell(cell_id: int) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="Назад", callback_data="storage_open_cells")]
     ])
 
-def get_filled_cell_keyboard(cell_id: int) -> InlineKeyboardMarkup:
+def get_filled_cell_keyboard(cell_id: int, confirmation_status: str = "confirmed") -> InlineKeyboardMarkup:
     """Эстетичная и удобная клавиатура для заполненной ячейки"""
     keyboard = [
         [
@@ -71,6 +71,9 @@ def get_filled_cell_keyboard(cell_id: int) -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(text="📅 Продлить хранение", callback_data=f"storage_extend:{cell_id}"),
+            InlineKeyboardButton(text="📤 Получить шины", callback_data=f"storage_pickup:{cell_id}"),
+        ],
+        [
             InlineKeyboardButton(text="🔓 Освободить", callback_data=f"storage_free:{cell_id}"),
         ],
         [

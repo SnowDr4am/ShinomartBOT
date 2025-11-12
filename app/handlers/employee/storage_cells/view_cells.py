@@ -103,9 +103,30 @@ async def storage_cell_info(callback: CallbackQuery, state: FSMContext):
         st = str(storage.storage_type).lower()
         human_type = "Шины с дисками" if ("rim" in st or "диск" in st or "with" in st) else "Шины"
 
+        # Статус подтверждения
+        confirmation_status = getattr(storage, 'confirmation_status', 'confirmed')
+        action_type = getattr(storage, 'action_type', 'handover')
+        
+        if confirmation_status == "pending":
+            status_icon = "⏳"
+            status_text = "Ожидает подтверждения"
+            if action_type == "handover":
+                status_text += " (сдача шин)"
+            elif action_type == "pickup":
+                status_text += " (получение шин)"
+            elif action_type == "free":
+                status_text += " (освобождение ячейки)"
+        elif confirmation_status == "confirmed":
+            status_icon = "✅"
+            status_text = "Подтверждено"
+        else:
+            status_icon = "❌"
+            status_text = "Отклонено"
+        
         text = (
             f"📦 <b>Ячейка №{getattr(cell, 'value', None) or cell.id}</b>\n"
             f"<b>Статус:</b> ✅ Занята\n"
+            f"<b>Подтверждение:</b> {status_icon} {status_text}\n"
             f"———————————————\n"
             f"👤 <b>Клиент</b>\n"
             f"• Имя: {user_name}\n"
@@ -147,7 +168,7 @@ async def storage_cell_info(callback: CallbackQuery, state: FSMContext):
         info_msg = await callback.message.answer(
             text,
             parse_mode="HTML",
-            reply_markup=kb.get_filled_cell_keyboard(cell_id)
+            reply_markup=kb.get_filled_cell_keyboard(cell_id, confirmation_status)
         )
         await update_message_ids_in_state(state, "action_message_ids", info_msg.message_id)
 

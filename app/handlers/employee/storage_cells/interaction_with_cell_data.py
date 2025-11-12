@@ -160,25 +160,148 @@ async def process_extend_month(callback: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
+# ==================== Получение шин ====================
+
+@employee_router.callback_query(F.data.startswith("storage_pickup:"))
+async def pickup_storage_cell(callback: CallbackQuery, state: FSMContext):
+    """Инициация получения шин - отправка запроса подтверждения пользователю"""
+    await callback.answer()
+    
+    cell_id = int(callback.data.split(":")[1])
+    cell = await storage_service.get_cell(cell_id)
+    
+    if not cell or not cell.cell_storage:
+        return await callback.answer("❌ Ячейка не найдена или пуста!", show_alert=True)
+    
+    storage = cell.cell_storage
+    
+    # Обновляем статус на pending для получения
+    await storage_service.save_or_update_cell_storage(
+        cell_id=cell_id,
+        worker_id=storage.worker_id,
+        user_id=storage.user_id,
+        storage_type=storage.storage_type,
+        price=storage.price,
+        description=storage.description,
+        scheduled_month=storage.scheduled_month,
+        meta_data=storage.meta_data,
+        action_type="pickup",
+        confirmation_status="pending"
+    )
+    
+    # Отправляем запрос подтверждения пользователю
+    try:
+        user_data = await rq.get_user_by_id(storage.user_id)
+        user_tg_id = int(user_data.user_id)
+        cell_value = getattr(cell, 'value', None) or cell_id
+        months_ru = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь",
+                     "Ноябрь", "Декабрь"]
+        scheduled_date = f"{months_ru[storage.scheduled_month.month - 1]} {storage.scheduled_month.year}"
+        price_str = f"{int(storage.price):,}".replace(",", " ")
+        
+        confirmation_text = (
+            f"📤 <b>Подтверждение получения шин</b>\n\n"
+            f"Ячейка №{cell_value}\n"
+            f"Тип: {storage.storage_type}\n"
+            f"Описание: {storage.description or 'Отсутствует'}\n"
+            f"Цена: {price_str} ₽\n"
+            f"Срок хранения: до {scheduled_date}\n\n"
+            f"Подтвердите получение шин:"
+        )
+        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+        confirmation_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Подтвердить", callback_data=f"storage_confirm_pickup:{storage.id}:yes"),
+                InlineKeyboardButton(text="❌ Отклонить", callback_data=f"storage_confirm_pickup:{storage.id}:no")
+            ]
+        ])
+        await callback.bot.send_message(
+            chat_id=user_tg_id,
+            text=confirmation_text,
+            parse_mode="HTML",
+            reply_markup=confirmation_keyboard
+        )
+        await callback.message.edit_text(
+            f"✅ <b>Запрос на получение шин отправлен клиенту</b>\n\n"
+            f"Ожидается подтверждение от клиента.",
+            parse_mode="HTML",
+            reply_markup=kb.generate_simple_keyboard("Назад", f"storage_cell:{cell_id}")
+        )
+    except Exception as e:
+        print(f"⚠️ Ошибка при отправке запроса подтверждения пользователю: {e}")
+        await callback.answer("❌ Не удалось отправить запрос подтверждения!", show_alert=True)
+
+
 # ==================== Освобождение ячейки ====================
 
 @employee_router.callback_query(F.data.startswith("storage_free:"))
 async def free_storage_cell(callback: CallbackQuery, state: FSMContext):
-    """Освобождение ячейки"""
+    """Инициация освобождения ячейки - отправка запроса подтверждения пользователю"""
     await callback.answer()
 
     cell_id = int(callback.data.split(":")[1])
-    # Перед подтверждением освобождения — удаляем фото
-    await delete_message_in_state(callback.bot, state, callback.from_user.id, only_media=True)
-    keyboard = await kb.get_confirmation_keyboard("free", cell_id)
-
-    await callback.message.edit_text(
-        f"🔓 <b>Освобождение ячейки №{cell_id}</b>\n\n"
-        "⚠️ Вы уверены, что хотите очистить ячейку?\n"
-        "Все данные о хранении будут удалены.",
-        parse_mode="HTML",
-        reply_markup=keyboard
+    cell = await storage_service.get_cell(cell_id)
+    
+    if not cell or not cell.cell_storage:
+        return await callback.answer("❌ Ячейка не найдена или пуста!", show_alert=True)
+    
+    storage = cell.cell_storage
+    
+    # Обновляем статус на pending для освобождения
+    await storage_service.save_or_update_cell_storage(
+        cell_id=cell_id,
+        worker_id=storage.worker_id,
+        user_id=storage.user_id,
+        storage_type=storage.storage_type,
+        price=storage.price,
+        description=storage.description,
+        scheduled_month=storage.scheduled_month,
+        meta_data=storage.meta_data,
+        action_type="free",
+        confirmation_status="pending"
     )
+    
+    # Отправляем запрос подтверждения пользователю
+    try:
+        user_data = await rq.get_user_by_id(storage.user_id)
+        user_tg_id = int(user_data.user_id)
+        cell_value = getattr(cell, 'value', None) or cell_id
+        months_ru = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь",
+                     "Ноябрь", "Декабрь"]
+        scheduled_date = f"{months_ru[storage.scheduled_month.month - 1]} {storage.scheduled_month.year}"
+        price_str = f"{int(storage.price):,}".replace(",", " ")
+        
+        confirmation_text = (
+            f"🔓 <b>Подтверждение освобождения ячейки</b>\n\n"
+            f"Ячейка №{cell_value}\n"
+            f"Тип: {storage.storage_type}\n"
+            f"Описание: {storage.description or 'Отсутствует'}\n"
+            f"Цена: {price_str} ₽\n"
+            f"Срок хранения: до {scheduled_date}\n\n"
+            f"Подтвердите освобождение ячейки:"
+        )
+        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+        confirmation_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Подтвердить", callback_data=f"storage_confirm_free:{storage.id}:yes"),
+                InlineKeyboardButton(text="❌ Отклонить", callback_data=f"storage_confirm_free:{storage.id}:no")
+            ]
+        ])
+        await callback.bot.send_message(
+            chat_id=user_tg_id,
+            text=confirmation_text,
+            parse_mode="HTML",
+            reply_markup=confirmation_keyboard
+        )
+        await callback.message.edit_text(
+            f"✅ <b>Запрос на освобождение ячейки отправлен клиенту</b>\n\n"
+            f"Ожидается подтверждение от клиента.",
+            parse_mode="HTML",
+            reply_markup=kb.generate_simple_keyboard("Назад", f"storage_cell:{cell_id}")
+        )
+    except Exception as e:
+        print(f"⚠️ Ошибка при отправке запроса подтверждения пользователю: {e}")
+        await callback.answer("❌ Не удалось отправить запрос подтверждения!", show_alert=True)
 
 
 # ==================== Удаление ячейки ====================
@@ -221,21 +344,7 @@ async def confirm_action(callback: CallbackQuery):
                 parse_mode="HTML",
                 reply_markup=kb.generate_simple_keyboard("Назад", "storage_open_cells")
             )
-    elif action == "free":
-        # Освобождаем ячейку (удаляем запись хранения)
-        success = await storage_service.delete_cell_storage(cell_id)
-        if success:
-            await callback.message.edit_text(
-                f"✅ <b>Ячейка №{cell_id} освобождена!</b>",
-                parse_mode="HTML",
-                reply_markup=kb.generate_simple_keyboard("Назад", f"storage_cell:{cell_id}")
-            )
-        else:
-            await callback.message.edit_text(
-                "❌ Не удалось освободить ячейку!",
-                parse_mode="HTML",
-                reply_markup=kb.generate_simple_keyboard("Назад", f"storage_cell:{cell_id}")
-            )
+    # Обработка освобождения теперь через подтверждение пользователя (storage_confirm_free)
 
 
 RU_MONTHS_NOM = [

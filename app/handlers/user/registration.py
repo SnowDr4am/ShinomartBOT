@@ -45,19 +45,23 @@ async def get_name(message: Message, state: FSMContext):
 @user_router.message(GetUserInfo.mobile_phone)
 async def get_mobile_phone(message: Message, state: FSMContext):
     try:
-        if message.contact is not None:
-            phone_number = message.contact.phone_number
-            cleaned_number = re.sub(r'\D', '', phone_number)
-        else:
-            user_input = message.text
-            if not user_input:
-                await message.answer(
-                    "⚠️ <b>Вы не ввели номер телефона.</b>",
-                        parse_mode='HTML'
-                )
-                return
-
-            cleaned_number = re.sub(r'\D', '', user_input)
+        # Проверяем, что номер отправлен через кнопку (contact)
+        if message.contact is None:
+            # Если пользователь отправил текст вместо использования кнопки
+            return await message.answer(
+                "📱 <b>Пожалуйста, используйте кнопку для отправки номера телефона!</b>\n\n"
+                "🔍 <b>Где найти кнопку?</b>\n"
+                "Кнопка находится <b>справа от поля ввода текста</b> (внизу экрана).\n"
+                "Нажмите на иконку 📎 (скрепка) или найдите большую кнопку с текстом "
+                "<b>«ОТПРАВИТЬ НОМЕР ТЕЛЕФОНА»</b>.\n\n"
+                "Кнопка автоматически отправит ваш номер телефона из настроек Telegram.",
+                parse_mode='HTML',
+                reply_markup=kb.get_phone_number
+            )
+        
+        # Номер отправлен через кнопку
+        phone_number = message.contact.phone_number
+        cleaned_number = re.sub(r'\D', '', phone_number)
 
         if not cleaned_number or cleaned_number[0] not in ('7', '8'):
             await message.answer(
@@ -94,6 +98,7 @@ async def get_mobile_phone(message: Message, state: FSMContext):
         bonus_settings = await rq.get_bonus_system_settings()
 
         if await rq.set_user(user_id, datetime.now(), name, number, datetime.now(), bonus_settings['start_bonus_balance']):
+            # Регистрация успешна - отправляем сообщение пользователю
             await message.answer(
                 f"✅ <b>Регистрация завершена.</b>\n"
                 f"👤 <b>Имя:</b> {name}\n"
@@ -102,29 +107,33 @@ async def get_mobile_phone(message: Message, state: FSMContext):
                 reply_markup=ReplyKeyboardRemove()
             )
 
-            user_link = f"@{message.from_user.username}" if message.from_user.username else f'<a href="tg://user?id={user_id}">{name}</a>'
-
-            await message.bot.send_message(
-                chat_id=CHANNEL_ID,
-                text = (
-                    f"💎 <b>Новый пользователь в боте:</b>\n"
-                    f"━━━━━━━━━━━━━━━━\n\n"
-                    f"🔹 <b>Имя:</b> {name}\n\n"
-                    f"🔹 <b>Телефон:</b> {number}\n\n"
-                    f"🔹 <b>Профиль</b> {user_link}"
-                ),
-                parse_mode='HTML'
-            )
+            # Пытаемся отправить уведомление в канал (не критично, если не получится)
+            try:
+                user_link = f"@{message.from_user.username}" if message.from_user.username else f'<a href="tg://user?id={user_id}">{name}</a>'
+                await message.bot.send_message(
+                    chat_id=CHANNEL_ID,
+                    text = (
+                        f"💎 <b>Новый пользователь в боте:</b>\n"
+                        f"━━━━━━━━━━━━━━━━\n\n"
+                        f"🔹 <b>Имя:</b> {name}\n\n"
+                        f"🔹 <b>Телефон:</b> {number}\n\n"
+                        f"🔹 <b>Профиль</b> {user_link}"
+                    ),
+                    parse_mode='HTML'
+                )
+            except Exception as channel_error:
+                # Логируем ошибку отправки в канал, но не прерываем регистрацию
+                print(f"⚠️ Не удалось отправить уведомление в канал: {channel_error}")
 
             await state.clear()
-
             await cmd_start(message, state)
         else:
             await message.answer("🚨 <b>Внутренняя ошибка.</b> Попробуйте позже.", parse_mode='HTML')
 
     except Exception as e:
-        print(f"Ошибка: {e}")
+        print(f"Ошибка при регистрации: {e}")
         await message.answer(
             "⚠️ <b>Произошла ошибка при обработке номера телефона.</b> Попробуйте ещё раз",
-            parse_mode='HTML'
+            parse_mode='HTML',
+            reply_markup=kb.get_phone_number
         )

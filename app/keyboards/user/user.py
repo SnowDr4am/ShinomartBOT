@@ -6,12 +6,12 @@ registration = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='📝 Начать регистрацию', callback_data='registration')]
 ])
 
-# Клавиатура для получения номера телефона
+# Клавиатура для получения номера телефона (большая кнопка)
 get_phone_number = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text='📱 Отправить номер телефона', request_contact=True)]
+        [KeyboardButton(text='📱📱📱 ОТПРАВИТЬ НОМЕР ТЕЛЕФОНА 📱📱📱', request_contact=True)]
     ],
-    resize_keyboard=True
+    one_time_keyboard=True
 )
 
 # Главное меню

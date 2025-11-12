@@ -80,7 +80,7 @@ async def process_storage_type(callback: CallbackQuery, state: FSMContext):
 
     # Определяем цену
     if storage_type == "Шины с дисками":
-        price = 3500
+        price = 4000
     else:
         price = 3000
 
@@ -153,8 +153,8 @@ async def process_scheduled_month(callback: CallbackQuery, state: FSMContext):
     sent = await callback.message.edit_text(
         f"✅ Срок хранения: <b>{scheduled_date.strftime('%B %Y')}</b>\n\n"
         "📸 <b>Отправьте фотографии:</b>\n"
-        "<i>(можно отправить несколько фото)</i>\n\n"
-        "После отправки всех фото напишите <b>'готово'</b>",
+        "<i>Необходимо прикрепить от 5 до 10 фотографий</i>\n\n"
+        "После отправки всех фото нажмите <b>«Готово»</b>",
         parse_mode="HTML"
     )
     await state.update_data(photos=[])
@@ -176,9 +176,12 @@ async def handle_photos(message: Message, state: FSMContext, album: list[Message
             await update_message_ids_in_state(state, "action_message_ids", msg.message_id)
 
         await state.update_data(photos=current_photos)
+        photo_count = len(current_photos)
+        status_text = "✅ Достаточно фото" if 5 <= photo_count <= 10 else f"⚠️ Нужно от 5 до 10 фото (сейчас: {photo_count})"
         sent = await message.answer(
-            f"📷 <b>Загружено фото:</b> {len(current_photos)}\n"
+            f"📷 <b>Загружено фото:</b> {photo_count}\n"
             f"━━━━━━━━━━━━━━━━\n"
+            f"{status_text}\n\n"
             f"Можете добавить ещё или нажмите <b>«Готово»</b> для продолжения",
             parse_mode='HTML',
             reply_markup=kb.cell_data_complete_photo_report
@@ -190,9 +193,12 @@ async def handle_photos(message: Message, state: FSMContext, album: list[Message
         current_photos.append(file_id)
         await state.update_data(photos=current_photos)
         await update_message_ids_in_state(state, "action_message_ids", message.message_id)
+        photo_count = len(current_photos)
+        status_text = "✅ Достаточно фото" if 5 <= photo_count <= 10 else f"⚠️ Нужно от 5 до 10 фото (сейчас: {photo_count})"
         sent = await message.answer(
-            f"📷 <b>Загружено фото:</b> {len(current_photos)}\n"
+            f"📷 <b>Загружено фото:</b> {photo_count}\n"
             f"━━━━━━━━━━━━━━━━\n"
+            f"{status_text}\n\n"
             f"Можете добавить ещё или нажмите <b>«Готово»</b> для продолжения",
             parse_mode='HTML',
             reply_markup=kb.cell_data_complete_photo_report
@@ -213,8 +219,24 @@ async def finish_photo_collection(callback: CallbackQuery, state: FSMContext):
 
     if not photos:
         return await callback.answer(
-            "⚠️ Необходимо добавить хотя бы одну фотографию!\n"
+            "⚠️ Необходимо добавить от 5 до 10 фотографий!\n"
             "Отправьте фото или напишите 'отмена' для отмены операции.",
+            show_alert=True
+        )
+    
+    photo_count = len(photos)
+    if photo_count < 5:
+        return await callback.answer(
+            f"⚠️ Недостаточно фотографий!\n"
+            f"Необходимо минимум 5 фото, сейчас: {photo_count}",
+            show_alert=True
+        )
+    
+    if photo_count > 10:
+        return await callback.answer(
+            f"⚠️ Слишком много фотографий!\n"
+            f"Максимум 10 фото, сейчас: {photo_count}\n"
+            f"Удалите лишние фото и попробуйте снова.",
             show_alert=True
         )
 
@@ -238,7 +260,7 @@ async def finish_photo_collection(callback: CallbackQuery, state: FSMContext):
 
     meta_data = {"photos": photos}
 
-    # Сохраняем в базу
+    # Сохраняем в базу с резервированием (action_type="handover", confirmation_status="pending")
     cell_storage = await storage_service.save_or_update_cell_storage(
         cell_id=cell_id,
         worker_id=worker_data.id,
@@ -247,25 +269,49 @@ async def finish_photo_collection(callback: CallbackQuery, state: FSMContext):
         price=price,
         description=description,
         scheduled_month=scheduled_month,
-        meta_data=meta_data
+        meta_data=meta_data,
+        action_type="handover",
+        confirmation_status="pending"
     )
 
-    # Генерируем Word документ
-    word_file = await generate_storage_word_document(cell_storage, user_data, worker_data)
-
-    if word_file and os.path.exists(word_file):
-        document = FSInputFile(word_file)
-        await callback.message.answer_document(
-            document=document,
-            caption=f"Файл для отчета",
-            reply_markup=kb.delete_message_keyboard
+    # Файл будет отправлен только после подтверждения клиента
+    # Отправляем запрос подтверждения пользователю
+    try:
+        user_tg_id = int(user_data.user_id)
+        cell_value = getattr(await storage_service.get_cell(cell_id), 'value', None) or cell_id
+        months_ru = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь",
+                     "Ноябрь", "Декабрь"]
+        scheduled_date_ru = f"{months_ru[scheduled_month.month - 1]} {scheduled_month.year}"
+        confirmation_text = (
+            f"📦 <b>Подтверждение сдачи шин на хранение</b>\n\n"
+            f"Ячейка №{cell_value}\n"
+            f"Тип: {storage_type}\n"
+            f"Описание: {description or 'Отсутствует'}\n"
+            f"Цена: {int(price):,} ₽\n"
+            f"Срок хранения: до {scheduled_date_ru}\n\n"
+            f"Подтвердите сдачу шин на хранение:"
         )
+        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+        confirmation_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Подтвердить", callback_data=f"storage_confirm_handover:{cell_storage.id}:yes"),
+                InlineKeyboardButton(text="❌ Отклонить", callback_data=f"storage_confirm_handover:{cell_storage.id}:no")
+            ]
+        ])
+        await callback.bot.send_message(
+            chat_id=user_tg_id,
+            text=confirmation_text,
+            parse_mode="HTML",
+            reply_markup=confirmation_keyboard
+        )
+    except Exception as e:
+        print(f"⚠️ Ошибка при отправке запроса подтверждения пользователю: {e}")
 
     await delete_message_in_state(callback.bot, state, callback.from_user.id)
     await state.clear()
 
     await callback.message.answer(
-        f"Ячейка #{cell_id} успешно заполнена",
+        f"✅ Ячейка #{cell_id} заполнена. Ожидается подтверждение от клиента.",
         parse_mode="HTML",
         reply_markup=kb.generate_simple_keyboard("Назад", "storage_open_cells")
     )

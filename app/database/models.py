@@ -195,6 +195,8 @@ class CellStorage(Base):
     scheduled_month: Mapped[datetime.date] = mapped_column(Date, nullable=False)  # До какого месяца
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=func.now())
     meta_data: Mapped[dict] = mapped_column(JSON, default={})  # Для хранения photo_file_id
+    confirmation_status: Mapped[str] = mapped_column(String, default="pending", nullable=False)  # pending/confirmed/rejected
+    action_type: Mapped[str] = mapped_column(String, nullable=True)  # handover (сдача) / pickup (получение)
 
     storage_cell = relationship("StorageCell", back_populates="cell_storage")
 
