@@ -38,7 +38,13 @@ async def start_assessment(callback: CallbackQuery, state: FSMContext):
         reply_markup=kb.rating,
         parse_mode="HTML"
     )
-    await state.update_data(last_transaction=last_transaction)
+    # Сохраняем только необходимые поля для сериализации в JSON
+    await state.update_data(
+        last_transaction={
+            "id": last_transaction.id,
+            "worker_id": last_transaction.worker_id
+        }
+    )
     await state.set_state(ReviewState.waiting_for_rating)
 
 
@@ -64,8 +70,8 @@ async def process_comment_choice(callback: CallbackQuery, state: FSMContext):
         last_transaction = data["last_transaction"]
         await rq.save_review(
             user_id=str(callback.from_user.id),
-            purchase_id=last_transaction.id,
-            worker_id=last_transaction.worker_id,
+            purchase_id=last_transaction["id"],
+            worker_id=last_transaction["worker_id"],
             rating=data["rating"],
             comment=None
         )
@@ -92,8 +98,8 @@ async def process_comment(message: Message, state: FSMContext):
     if comment.lower() == "отмена":
         await rq.save_review(
             user_id=str(message.from_user.id),
-            purchase_id=last_transaction.id,
-            worker_id=last_transaction.worker_id,
+            purchase_id=last_transaction["id"],
+            worker_id=last_transaction["worker_id"],
             rating=data["rating"],
             comment=None
         )
@@ -104,8 +110,8 @@ async def process_comment(message: Message, state: FSMContext):
     else:
         await rq.save_review(
             user_id=str(message.from_user.id),
-            purchase_id=last_transaction.id,
-            worker_id=last_transaction.worker_id,
+            purchase_id=last_transaction["id"],
+            worker_id=last_transaction["worker_id"],
             rating=data["rating"],
             comment=comment
         )

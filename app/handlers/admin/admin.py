@@ -7,6 +7,7 @@ from openpyxl.styles import Font
 from aiogram import F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, FSInputFile
+from aiogram.exceptions import TelegramBadRequest
 from app.handlers.main import admin_router
 
 import app.keyboards.admin.admin as kb
@@ -71,20 +72,25 @@ async def handle_statistics_period(callback: CallbackQuery):
 
     stats = await rq.get_statistics(period=period)
 
-    await callback.message.edit_text(
-        f"<b>📊 Общая статистика бота</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"👥 <b>Число пользователей:</b> {stats['total_users']}\n\n"
-        f"💳 <b>Сумма бонусов на балансах:</b> {stats['total_bonus_balance']} ₽\n\n\n"
-        f"<b>📊 Статистика бота {stats['period_label']}:</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"💰 <b>Сумма покупок:</b> {stats['total_amount']} ₽\n\n"
-        f"🎁 <b>Сумма выданных бонусов:</b> {stats['total_bonus_amount']} ₽\n\n"
-        f"🟢 <b>Количество пользователей с транзакциями:</b> {stats['active_users']}\n\n"
-        f"🔄 <b>Количество транзакций:</b> {stats['total_transactions']}\n\n",
-        parse_mode="HTML",
-        reply_markup=kb.time_period
-    )
+    try:
+        await callback.message.edit_text(
+            f"<b>📊 Общая статистика бота</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"👥 <b>Число пользователей:</b> {stats['total_users']}\n\n"
+            f"💳 <b>Сумма бонусов на балансах:</b> {stats['total_bonus_balance']} ₽\n\n\n"
+            f"<b>📊 Статистика бота {stats['period_label']}:</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"💰 <b>Сумма покупок:</b> {stats['total_amount']} ₽\n\n"
+            f"🎁 <b>Сумма выданных бонусов:</b> {stats['total_bonus_amount']} ₽\n\n"
+            f"🟢 <b>Количество пользователей с транзакциями:</b> {stats['active_users']}\n\n"
+            f"🔄 <b>Количество транзакций:</b> {stats['total_transactions']}\n\n",
+            parse_mode="HTML",
+            reply_markup=kb.time_period
+        )
+    except TelegramBadRequest as e:
+        # Игнорируем ошибку, если сообщение не изменилось
+        if "message is not modified" not in str(e).lower():
+            raise
 
 async def clean_name(name):
     cleaned = re.sub(r'[\d+]', '', name)
